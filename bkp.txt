@@ -1,0 +1,2089 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<panel-form xmlns="http://www.davinti.com.br/vitruvio/form/panel" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.davinti.com.br/vitruvio/form/panel https://bitbucket.org/davinTI/vitruvio-xds/raw/master/vitruvio-panel-form.xsd">
+	<form formKey="formAcompanhamentoPedidos" width="100%"  height="100%">
+	
+        <name>Acompanhamento de Pedido</name>
+
+	<description>Acompanhamento de Pedido</description>
+    
+
+    <initScript language="JavaScript">
+        <![CDATA[ 
+                   function run (){                   
+
+                    var db = libService.loadScript('db');
+                    var vitruvio = new db('vitruvio');        
+                    var dates = libService.loadScript('javadateutils');
+
+                    
+
+                    var dtInicial = dates.format(dates.now(),'dd/MM/yyyy');   
+                    dtInicial = dates.parse(dtInicial,'dd/MM/yyyy'); 
+
+                    var dtInicialPedidos = dates.format(dates.addDays(-1,dates.now()),'dd/MM/yyyy'); 
+                        dtInicialPedidos = dates.parse(dtInicialPedidos,'dd/MM/yyyy');
+
+                     
+                    function atualizaDados(){
+                        engine.getField('dtInicial').setValue(dtInicial);
+                        engine.getField('dtFinal').setValue(dtInicial);
+
+                        engine.getField('statusPedido').setMultiSelect(true);
+                        engine.getField('statusPedido').setValue(['B','P']);
+
+                        var dtFinalAmbos = dates.format(dates.addDays(+1000,dates.now()),'dd/MM/yyyy'); 
+                        dtFinalAmbos = dates.parse(dtFinalAmbos,'dd/MM/yyyy'); 
+                        var dtInicioAmbos = dates.parse('02/01/2019','dd/MM/YYYY')
+                        engine.getField('dtInicialCollection').setValue(dtInicioAmbos);
+                        engine.getField('dtFinalCollection').setValue(dtFinalAmbos);  
+                        
+                        engine.getField('numeroPedido').setValue(null);
+                        engine.getField('codigoCliente').setValue(null);
+                        engine.getField('ProntoEntColec').setValue(null);
+                        engine.getField('twinDadosRca').setValue(null);
+                        engine.getField('twinDadosGerente').setValue(null);
+                        engine.getField('twinDadosSuperv').setValue(null);
+                        engine.getField('twinFornecedores').setValue(null); 
+                        
+                    }
+
+                    engine.setGlobalVariable('atualizaDados', atualizaDados); 
+                    atualizaDados();
+
+                    engine.getLayout('pnMonitoramentoDados').getRootComposition().setVisible(false);
+                    
+
+                    
+                       
+                   }
+                
+                ]]>
+      </initScript>
+
+	<components>
+
+		<VerticalLayout width="100%" height="100%" margin="true" spacing="true" backgroundColor="#102540">
+
+            <TabLayout width="100%" align="TOP_CENTER" height="100%">            
+              
+                <Tab caption="ACOMPANHAMENTO DE PEDIDOS">
+
+                <VerticalLayout width="100%" height="100%" margin="true" spacing="true" backgroundColor="#524a4a">
+                            <CrudPanel expandRatio="2"  height="100%" align="TOP_CENTER">
+
+                <BackGroundImage key="fusionAPI" resource="1.jpg" />
+				
+                <Header align="MIDDLE_LEFT" captionColor="#FFFFFF" subCaptionColor="#8cea60" backgroundColor="#4b4b4b"> 
+					<Caption>ACOMPANHAR STATUS DO PEDIDO</Caption>
+					<SubCaption>Identificando o status do pedido</SubCaption> 
+				</Header>
+			
+                <Section captionColor="#50c8e3" subCaptionColor="#8fe350" colorSeparator="#524a4a" 
+						 align="MIDDLE_LEFT" caption=""  
+						 subCaption="">
+			 		
+                    <Filter>
+
+                        <VerticalLayout width="100%" margin="true" spacing="true" align="TOP_CENTER">
+                        <HorizontalLayout width="100%" spacing="true" align="TOP_CENTER">
+						<ButtonWidget   defaultIcon="REFRESH" modifierKey="SHIFT" keyCode="ENTER" style="RED" id="btnLimparHead" caption="Limpar Filtros" expandRatio="0.4" 
+						description="Limpar os Campos de Filtro" align="BOTTOM_RIGHT">
+
+							<onClickScript language="JavaScript" description="teste">
+									   <![CDATA[
+                                            function run(){
+
+                                                        var atualizaDados = engine.getGlobalVariable('atualizaDados'); 
+                                                        atualizaDados();
+
+                                                        engine.getField('tblPedidos').refresh();
+
+                                            }										 
+									   ]]>    
+								  </onClickScript> 
+                                  
+						 </ButtonWidget>
+                         </HorizontalLayout>
+                         </VerticalLayout>
+ 
+					</Filter>    
+
+
+					<VerticalLayout spacing="true" margin="true" width="100%">
+
+                   
+                        <Panel width="100%" expandRatio="1" margin="false" id="pnlTitulo" backgroundColor="#EEEEEE"> 
+                            <VerticalLayout width="100%" margin="true" spacing="true">
+ 
+                                <HorizontalLayout width="100%" spacing="true" margin="true" align="BOTTOM_RIGHT">                            
+                  
+                                    <DBSearchField id="numeroPedido" type="number" caption="NÚMERO DO PEDIDO:" width="100%" searchViewWidth="70%" expandRatio="1.0">
+                                        <datasource>
+                                            <freeQuery connection-key="vitruvio">
+                                                <![CDATA[ 
+                                                
+                                                SELECT PC.NUMPED, PC.DATA AS DATA_PEDIDO, PC.CODCLI, CLI.CLIENTE, PC.CODUSUR AS COD_RCA, 'R$'|| PC.VLTOTAL as VLTOTAL, 'R$'|| PC.VLATEND as VLATEND, PC.POSICAO, PC.DTLIBERA, PC.DTWMS, PC.DTFAT, PC.DTCANCEL
+                                                FROM HAF.PCPEDC PC
+                                                INNER JOIN HAF.PCCLIENT CLI ON CLI.CODCLI = PC.CODCLI 
+                                                ORDER BY PC.DATA DESC
+                                                
+                                                ]]>
+                                            </freeQuery>
+
+
+                                        </datasource>
+
+                                        <key-field>NUMPED</key-field>
+
+                                        <caption-field>CLIENTE</caption-field>
+
+
+                                        <columns>
+                                            <column name="NUMPED" caption="NUM PED"/>
+                                            <column name="CODCLI" caption="COD CLI"/>
+                                            <column name="CLIENTE" caption="CLIENTE"/>
+                                            <column name="VLTOTAL" caption="VL TOTAL" decimalSeparator="," groupingSeparator="." aggregate="SUM" aggregatePrefix="Valor Total R$ " format="#,##0.00"/>
+                                            <column name="VLATEND" caption="VL ATENDIDO" decimalSeparator="," groupingSeparator="." aggregate="SUM" aggregatePrefix="Valor Total R$ " format="#,##0.00"/>
+                                            <column name="POSICAO" caption="STATUS"/>
+                                            <column name="DATA_PEDIDO" caption="DT PEDIDO" format="dd/MM/YYYY" type="date" />
+                                            <column name="DTLIBERA" caption="DT LIBERAÇÃO" format="dd/MM/YYYY" type="date" />
+                                            <column name="DTWMS" caption="DT WMS" format="dd/MM/YYYY" type="date" />
+                                            <column name="DTFAT" caption="DT FATURAMENTO" format="dd/MM/YYYY" type="date" />
+                                            <column name="DTCANCEL" caption="DT CANCELAMENTO" format="dd/MM/YYYY" type="date" />
+                                            <column name="COD_RCA" caption="COD RCA"/>
+                                        </columns>
+
+                                        <filterProperties>
+                                            <value>NUMPED</value>
+                                            <value>CODCLI</value>
+                                            <value>COD_RCA</value>
+                                        </filterProperties>
+
+                                        <!-- <events>
+                                            <valueChange>
+                                                <script language="JavaScript">
+                                                    <![CDATA[ 
+                                                        function run(){
+                                                            
+                                                            var db = libService.loadScript('db');
+                                                            var vitruvio = new db('vitruvio');        
+                                                            var dates = libService.loadScript('javadateutils');
+
+                                                            var numPed = engine.getField('numeroPedido').getValue();
+
+                                                            var statusPedido = vitruvio.queryRow("SELECT PC.POSICAO, PC.DATA FROM HAF.PCPEDC PC WHERE PC.NUMPED = :NUMPED",{NUMPED:numPed})
+
+                                                            if(statusPedido){
+                                                                engine.getField('statusPedido').setValue([statusPedido.POSICAO]);
+                                                                engine.getField('dtInicial').setValue(statusPedido.DATA);
+                                                            }
+
+                            
+                                                        }
+                                                    ]]>    
+                                                </script>
+                                            </valueChange>
+                                        </events> -->
+                                    
+                                     </DBSearchField>
+
+                                    <DBSearchField id="codigoCliente" type="string" caption="CÓDIGO DO CLIENTE:" width="100%" searchViewWidth="70%" expandRatio="1.0">
+                                        <datasource>
+                                            <freeQuery connection-key="vitruvio">
+                                                <![CDATA[ 
+                                                
+                                                SELECT
+                                                CLI.CODCLI,
+                                                CLI.CLIENTE,
+                                                CLI.ENDERCOB ||' | BAIRRO: '|| CLI.BAIRROCOB ||' | CIDADE: '|| CLI.MUNICCOB ||' | UF: '|| CLI.ESTCOB  AS END,
+                                                CLI.CGCENT,
+                                                CLI.DTPRIMCOMPRA,
+                                                CLI.DTULTCOMP,
+                                                CLI.DTCADASTRO,
+                                                CLI.BLOQUEIO,
+                                                CLI.OBS
+                                                FROM HAF.PCCLIENT CLI 
+                                                ORDER BY CLI.DTCADASTRO DESC
+                                                
+                                                ]]>
+                                            </freeQuery>
+
+
+                                        </datasource>
+
+                                        <key-field>CODCLI</key-field>
+
+                                        <caption-field>CLIENTE</caption-field>
+
+
+                                        <columns>
+                                            <column name="CODCLI" caption="CÓD. CLI"/>
+                                            <column name="CLIENTE" caption="CLIENTE"/>
+                                            <column name="END" caption="ENDEREÇO"/>
+                                            <column name="CGCENT" caption="CNPJ"/>
+                                            <column name="DTPRIMCOMPRA" caption="DT PRIM COMPRA"/>
+                                            <column name="DTULTCOMP" caption="DT ULT COMP"/>
+                                            <column name="DTCADASTRO" caption="DT CADASTRO"/>
+                                            <column name="BLOQUEIO" caption="BLOQUEIO"/>
+                                            <column name="OBS" caption="OBS"/>
+                                        </columns>
+
+                                        <filterProperties>
+                                            <value>CODCLI</value>
+                                            <value>CGCENT</value>
+                                        </filterProperties>
+                                    
+                                    </DBSearchField> 
+
+                                     <DateField id="dtInicial" type="date" caption="PERÍODO INICIAL:" resolution="DAY" format="dd/MM/yyyy" width="100%" description="PERÍODO INICIAL:" align="TOP_CENTER" expandRatio="1.0"/>
+                                     <DateField id="dtFinal" type="date" caption="PERÍODO FINAL:" resolution="DAY" format="dd/MM/yyyy" width="100%" description="PERÍODO FINAL:" align="TOP_CENTER" expandRatio="1.0"/>
+ 
+                                </HorizontalLayout>
+
+
+                                                         
+                                <HorizontalLayout width="100%" spacing="true" margin="true" align="BOTTOM_RIGHT">    
+                                    
+                                    <ButtonWidget  defaultIcon="FILTER" style="PRIMARY" id="btnFiltroCodGerente" caption="Selecionar Código Gerente"  description="Pesquisar as Informações Filtradas" width="100%"  >
+                                        <onClickScript language="JavaScript">
+                                                   <![CDATA[ 
+
+                                                        function run(){             
+
+                                                           engine.getLayout('modalDadosGerente').showWindow();
+    
+                                                        }
+                                                    
+                                                   ]]>  
+                                            </onClickScript>
+                                    </ButtonWidget>  
+                                    
+                                    <ButtonWidget  defaultIcon="FILTER" style="PRIMARY" id="btnFiltroFornecedor" caption="Selecionar Fornecedor"  description="Pesquisar as Informações Filtradas" width="100%"  >
+                                        <onClickScript language="JavaScript">
+                                                   <![CDATA[ 
+
+                                                        function run(){             
+
+                                                           engine.getLayout('modalDadosFornecedor').showWindow();
+    
+                                                        }
+                                                    
+                                                   ]]>  
+                                            </onClickScript>
+                                    </ButtonWidget>  
+
+                                    <ButtonWidget  defaultIcon="FILTER" style="PRIMARY" id="btnFiltroCodRca" caption="Selecionar Código RCA"  description="Pesquisar as Informações Filtradas" width="100%" >
+                                        <onClickScript language="JavaScript">
+                                                   <![CDATA[ 
+
+                                                        function run(){             
+
+                                                           engine.getLayout('modalDadosRca').showWindow();
+    
+                                                        }
+                                                    
+                                                   ]]>  
+                                            </onClickScript>
+                                    </ButtonWidget>  
+
+                                    <ButtonWidget  defaultIcon="FILTER" style="PRIMARY" id="btnFiltroCodSuperv" caption="Selecionar Código Supervisor"  description="Pesquisar as Informações Filtradas"   width="100%" >
+                                        <onClickScript language="JavaScript">
+                                                   <![CDATA[ 
+
+                                                        function run(){             
+
+                                                           engine.getLayout('modalDadosSuperv').showWindow();
+    
+                                                        }
+                                                    
+                                                   ]]>  
+                                            </onClickScript>
+                                    </ButtonWidget>  
+
+
+                                </HorizontalLayout>
+
+        
+
+                                <HorizontalLayout width="100%" spacing="true" margin="true" align="BOTTOM_RIGHT">
+
+                                <OptionGroup id="statusPedido" type="string" caption="STATUS DO PEDIDO:" allowNullSelection="true"  disposition="horizontal" align="TOP_CENTER" expandRatio="1.0">
+                                    <entry value="BLOQUEADO" key="B" />
+                                    <entry value="PENDENTE" key="P" />
+                                    <entry value="CANCELADO" key="C" />
+                                    <entry value="LIBERADO" key="L" />
+                                    <entry value="MONTADO" key="M" />
+                                    <entry value="FATURADO" key="F" />
+
+                                </OptionGroup> 
+
+
+
+                                <ComboBox id="ProntoEntColec" caption="Pronto Entrega ou Coleção:" type="string" width="100%" expandRatio="0.3" >
+                                    <entry value="PRONTO ENTREGA" key="prontoEntrega" />
+                                    <entry value="PROX COLEÇÃO" key="colecao" />
+                                    <entry value="TODOS OS PEDIDOS" key="ambosStatus" />
+
+                                    <events>
+                                       <valueChange>
+                                           <script language="JavaScript">
+                                               <![CDATA[ 
+                                                   function run(){
+
+                                                       var dates = libService.loadScript('javadateutils');
+
+
+                                                       var valorProntoEntre = engine.getField('ProntoEntColec').getValue();
+
+                                                       if(valorProntoEntre == "prontoEntrega"){
+                                                           
+                                                           var dtFinalProntoEntrega = dates.format(dates.addDays(+30,dates.now()),'dd/MM/yyyy'); 
+                                                               dtFinalProntoEntrega = dates.parse(dtFinalProntoEntrega,'dd/MM/yyyy'); 
+
+                                                           var dataFormatadaDate = dates.parse('02/01/2019','dd/MM/YYYY')
+                                                           
+
+                                                           engine.getField('dtInicialCollection').setValue(dataFormatadaDate);
+                                                           engine.getField('dtFinalCollection').setValue(dtFinalProntoEntrega);             
+                                                           
+                                                           engine.getField('dtInicial').setValue(dataFormatadaDate);
+                                                           engine.getField('dtFinal').setValue(dtFinalProntoEntrega);
+                                                       }
+
+                                                       if(valorProntoEntre == "colecao"){
+                                                            
+                                                           var dtInicioColecao = dates.format(dates.addDays(+30,dates.now()),'dd/MM/yyyy'); 
+                                                               dtInicioColecao = dates.parse(dtInicioColecao,'dd/MM/yyyy'); 
+
+                                                           var dtFinalColecao = dates.format(dates.addDays(+600,dates.now()),'dd/MM/yyyy'); 
+                                                               dtFinalColecao = dates.parse(dtFinalColecao,'dd/MM/yyyy'); 
+
+                                                           var dataFormatadaDate = dates.parse('02/01/2019','dd/MM/YYYY')
+                                                           var dataFinalColecao = dates.parse('02/01/2026','dd/MM/YYYY')
+                                                           
+
+                                                           engine.getField('dtInicialCollection').setValue(dtInicioColecao);
+                                                           engine.getField('dtFinalCollection').setValue(dataFinalColecao);  
+                                                           
+                                                           engine.getField('dtInicial').setValue(dataFormatadaDate);
+                                                           engine.getField('dtFinal').setValue(dataFinalColecao);
+
+                                                       }
+
+                                                       if(valorProntoEntre == "ambosStatus"){
+
+                                                           var dtFinalAmbos = dates.format(dates.addDays(+1000,dates.now()),'dd/MM/yyyy'); 
+                                                               dtFinalAmbos = dates.parse(dtFinalAmbos,'dd/MM/yyyy'); 
+
+                                                           var dtInicioAmbos = dates.parse('02/01/2019','dd/MM/YYYY')
+
+                                                           
+                                                           engine.getField('dtInicialCollection').setValue(dtInicioAmbos);
+                                                           engine.getField('dtFinalCollection').setValue(dtFinalAmbos);   
+                                                           
+                                                           engine.getField('dtInicial').setValue(dtInicioAmbos);
+                                                           engine.getField('dtFinal').setValue(dtFinalAmbos);
+                                                       }
+
+                                                   }
+                                               ]]>
+                                           </script>
+                                       </valueChange>
+                                    </events>
+                                </ComboBox>
+
+                                 <ButtonWidget  defaultIcon="SEARCH" style="BLUE" id="btnPesquisar" caption="Pesquisar"  description="Pesquisar as Informações Filtradas"   expandRatio="0.5">
+                                    <onClickScript language="JavaScript">
+                                                <![CDATA[ 
+                                                    function run(){             
+                                                        engine.getField('tblPedidos').refresh();
+                                                    }                                                
+                                                ]]>  
+                                        </onClickScript>
+                                    </ButtonWidget>   
+
+                                </HorizontalLayout>
+
+                                <!-- *********************************************  -->
+                                <HorizontalLayout width="100%" spacing="true" margin="true" align="BOTTOM_RIGHT" visible="true">
+
+                                    <WindowLayout id="modalDadosFornecedor" windowModal="true" windowClosable="true" windowResizable="false" windowTitle="Dados do Fornecedor" windowWidth="70%" windowHeight="70%" >
+                                        <VerticalLayout margin="true" spacing="true" width="100%">
+                                                
+                                            <Panel id="pnDadosFornec" caption="Selecionar Fornecedor" width="100%" align="TOP_RIGHT" backgroundColor="#EEEEEE"> 
+                                                <VerticalLayout margin="true" width="100%" spacing="true">         
+                                                <HorizontalLayout spacing="true" width="100%">
+                                                    
+                                                    <DBTwinColSelect id="twinFornecedores" multivalue="true" type="number" width="100%" allowFilter="true" allowNullSelection="false" rows="20" caption="Selecionar Fornecedor">
+                                                        <datasource>
+                                                            <freeQuery connection-key="vitruvio">
+                                                                <![CDATA[
+                                                                    SELECT CODFORNEC ||' - '|| FORNECEDOR AS PKFORNEC,CODFORNEC, FORNECEDOR, CIDADE, DTCADASTRO FROM HAF.PCFORNEC ORDER BY FORNECEDOR ASC
+                                                                ]]>
+                                                            </freeQuery>
+                                                        </datasource>
+                            
+                                                        <key-field>CODFORNEC</key-field>
+                                                        <caption-field>PKFORNEC</caption-field>     
+                                                                            
+                                                    </DBTwinColSelect>                                                    
+                                                </HorizontalLayout>
+                                                
+                                                <HorizontalLayout spacing="true" width="70%" align="TOP_CENTER">
+                                                    <ButtonWidget  defaultIcon="REMOVE" style="RED" id="btnLimparFornec" caption="Limpar"  description="Pesquisar as Informações Filtradas"   expandRatio="1.0">
+                                                        <onClickScript language="JavaScript">
+                                                                    <![CDATA[ 
+                
+                                                                        function run(){             
+                                                                                                                
+                                                                            engine.getField('twinFornecedores').setValue(null);
+                                                                            engine.getField('tblPedidos').refresh();
+                    
+                                                                        }
+                                                                    
+                                                                    ]]>  
+                                                            </onClickScript>
+                                                        </ButtonWidget>  
+
+                                                        <ButtonWidget  defaultIcon="SEARCH" style="BLUE" id="btnConfirmarFornecedores" caption="Confirmar"  description="Pesquisar as Informações Filtradas"   expandRatio="1.0">
+                                                            <onClickScript language="JavaScript">
+                                                                        <![CDATA[ 
+                    
+                                                                        function run(){          
+                                                                        
+                                                                            var dadosTwin = engine.getField('twinFornecedores').getValue();
+                                                                            
+                                                                            //engine.getField('tblPedidos').refresh();
+                                                                            engine.getLayout('modalDadosFornecedor').closeWindow();
+
+                        
+                                                                        }
+                                                                        
+                                                                        ]]>  
+                                                                </onClickScript>
+                                                            </ButtonWidget>  
+                                                </HorizontalLayout>
+                                            </VerticalLayout>
+                                                
+                                            </Panel>
+                    
+                                        </VerticalLayout>
+                                    </WindowLayout> 
+
+                                    <WindowLayout id="modalDadosGerente" windowModal="true" windowClosable="true" windowResizable="false" windowTitle="Dados do Gerente" windowWidth="70%" windowHeight="70%" >
+                                        <VerticalLayout margin="true" spacing="true" width="100%">
+                                                
+                                            <Panel id="pnDadosGerente" caption="Selecionar Cliente" width="100%" align="TOP_RIGHT" backgroundColor="#EEEEEE"> 
+                                                <VerticalLayout margin="true" width="100%" spacing="true">         
+                                                <HorizontalLayout spacing="true" width="100%">
+                                                    
+                                                    <DBTwinColSelect id="twinDadosGerente" multivalue="true" type="number" width="100%" allowFilter="true" allowNullSelection="false" rows="20" caption="Selecionar Gerente" >
+                                                        <datasource>
+                                                            <freeQuery connection-key="vitruvio">
+                                                                <![CDATA[
+                                                                    SELECT CODGERENTE, CODGERENTE ||' - '|| NOMEGERENTE AS PKEYGERENTE FROM HAF.PCGERENTE
+                                                                ]]>
+                                                            </freeQuery>
+                                                        </datasource>
+                            
+                                                        <key-field>CODGERENTE</key-field>
+                                                        <caption-field>PKEYGERENTE</caption-field>     
+                                                        
+                    
+                                                    </DBTwinColSelect>
+                                                    
+                                                </HorizontalLayout>
+                                                
+                                                <HorizontalLayout spacing="true" width="70%" align="TOP_CENTER">
+                                                    <ButtonWidget  defaultIcon="REMOVE" style="RED" id="btnLimparGerente" caption="Limpar"  description="Pesquisar as Informações Filtradas"   expandRatio="1.0">
+                                                        <onClickScript language="JavaScript">
+                                                                    <![CDATA[                 
+                                                                        function run(){                                                                                                                             
+                                                                            engine.getField('twinDadosGerente').setValue(null);
+                                                                            engine.getField('tblPedidos').refresh();                    
+                                                                        }                                                                    
+                                                                    ]]>  
+                                                            </onClickScript>
+                                                    </ButtonWidget>  
+
+                                                    <ButtonWidget  defaultIcon="SEARCH" style="BLUE" id="btnConfirmarGerente" caption="Confirmar"  description="Pesquisar as Informações Filtradas"   expandRatio="1.0">
+                                                            <onClickScript language="JavaScript">
+                                                                        <![CDATA[                     
+                                                                            function run(){                                                                                  
+                                                                                var dadosTwin = engine.getField('twinDadosGerente').getValue();                                                                            
+                                                                                //engine.getField('tblPedidos').refresh();
+                                                                                engine.getLayout('modalDadosGerente').closeWindow();
+                                                                            }                                                                        
+                                                                        ]]>  
+                                                                </onClickScript>
+                                                    </ButtonWidget>  
+                                                </HorizontalLayout>
+                                            </VerticalLayout>
+                                                
+                                            </Panel>
+                    
+                                        </VerticalLayout>
+                                    </WindowLayout> 
+
+                                    <WindowLayout id="modalDadosRca" windowModal="true" windowClosable="true" windowResizable="false" windowTitle="Dados do Rca" windowWidth="70%" windowHeight="70%" >
+                                        <VerticalLayout margin="true" spacing="true" width="100%">
+                                                
+                                            <Panel id="pnDadosRca" caption="Selecionar Rca" width="100%" align="TOP_RIGHT" backgroundColor="#EEEEEE"> 
+                                                <VerticalLayout margin="true" width="100%" spacing="true">         
+                                                <HorizontalLayout spacing="true" width="100%">
+                                                    
+                                                    <DBTwinColSelect id="twinDadosRca" multivalue="true" type="string" width="100%" allowFilter="true" allowNullSelection="false" rows="20" caption="Selecionar Rca" >
+                                                        <datasource>
+                                                            <freeQuery connection-key="vitruvio">
+                                                                <![CDATA[
+                                                                    SELECT DISTINCT UR.CODUSUR, UR.CODUSUR ||' - '|| UR.NOME AS PKEYRCA, UR.NOME FROM HAF.PCUSUARI UR 
+                                                                ]]>
+                                                            </freeQuery>
+                                                        </datasource>
+                            
+                                                        <key-field>CODUSUR</key-field>
+                                                        <caption-field>PKEYRCA</caption-field>     
+                                                        
+                    
+                                                    </DBTwinColSelect>
+                                                    
+                                                </HorizontalLayout>
+                                                
+                                                <HorizontalLayout spacing="true" width="70%" align="TOP_CENTER">
+                                                    <ButtonWidget  defaultIcon="REMOVE" style="RED" id="btnLimparRca" caption="Limpar"  description="Pesquisar as Informações Filtradas"   expandRatio="1.0">
+                                                        <onClickScript language="JavaScript">
+                                                                    <![CDATA[ 
+                
+                                                                        function run(){             
+                                                                                                                
+                                                                            engine.getField('twinDadosRca').setValue(null);
+                                                                            engine.getField('tblPedidos').refresh();
+                    
+                                                                        }
+                                                                    
+                                                                    ]]>  
+                                                            </onClickScript>
+                                                    </ButtonWidget>  
+
+                                                    <ButtonWidget  defaultIcon="SEARCH" style="BLUE" id="btnConfirmarRca" caption="Confirmar"  description="Pesquisar as Informações Filtradas"   expandRatio="1.0">
+                                                            <onClickScript language="JavaScript">
+                                                                        <![CDATA[ 
+                    
+                                                                        function run(){          
+                                                                        
+                                                                            var dadosTwin = engine.getField('twinDadosRca').getValue();
+
+                                                                            //engine.getField('tblPedidos').refresh();
+                                                                            engine.getLayout('modalDadosRca').closeWindow();
+
+                        
+                                                                        }
+                                                                        
+                                                                        ]]>  
+                                                                </onClickScript>
+                                                    </ButtonWidget>  
+                                                </HorizontalLayout>
+                                            </VerticalLayout>
+                                                
+                                            </Panel>
+                    
+                                        </VerticalLayout>
+                                    </WindowLayout> 
+
+                                    <WindowLayout id="modalDadosSuperv" windowModal="true" windowClosable="true" windowResizable="false" windowTitle="Dados do Superv" windowWidth="70%" windowHeight="70%" >
+                                        <VerticalLayout margin="true" spacing="true" width="100%">
+                                                
+                                            <Panel id="pnDadosSuperv" caption="Selecionar Superv" width="100%" align="TOP_RIGHT" backgroundColor="#EEEEEE"> 
+                                                <VerticalLayout margin="true" width="100%" spacing="true">         
+                                                <HorizontalLayout spacing="true" width="100%">
+                                                    
+                                                    <DBTwinColSelect id="twinDadosSuperv" multivalue="true" type="string" width="100%" allowFilter="true" allowNullSelection="false" rows="20" caption="Selecionar Superv" >
+                                                        <datasource>
+                                                            <freeQuery connection-key="vitruvio">
+                                                                <![CDATA[
+
+                                                                        SELECT CODSUPERVISOR, NOME, CODSUPERVISOR ||' - '|| NOME AS PKEYSUPERV FROM HAF.PCSUPERV 
+
+                                                                ]]>
+                                                            </freeQuery>
+                                                        </datasource>
+                            
+                                                        <key-field>CODSUPERVISOR</key-field>
+                                                        <caption-field>PKEYSUPERV</caption-field>     
+                                                        
+                    
+                                                    </DBTwinColSelect>
+                                                    
+                                                </HorizontalLayout>
+                                                
+                                                <HorizontalLayout spacing="true" width="70%" align="TOP_CENTER">
+                                                    <ButtonWidget  defaultIcon="REMOVE" style="RED" id="btnLimparSuperv" caption="Limpar"  description="Pesquisar as Informações Filtradas"   expandRatio="1.0">
+                                                        <onClickScript language="JavaScript">
+                                                                    <![CDATA[ 
+                
+                                                                        function run(){             
+                                                                                                                
+                                                                            engine.getField('twinDadosRca').setValue(null);
+                                                                            engine.getField('tblPedidos').refresh();
+                    
+                                                                        }
+                                                                    
+                                                                    ]]>  
+                                                            </onClickScript>
+                                                    </ButtonWidget>  
+
+                                                    <ButtonWidget  defaultIcon="SEARCH" style="BLUE" id="btnConfirmarSuperv" caption="Confirmar"  description="Pesquisar as Informações Filtradas"   expandRatio="1.0">
+                                                            <onClickScript language="JavaScript">
+                                                                        <![CDATA[ 
+                    
+                                                                        function run(){          
+                                                                        
+                                                                            var dadosTwin = engine.getField('twinDadosSuperv').getValue();
+
+                                                                            //engine.getField('tblPedidos').refresh();
+                                                                            engine.getLayout('modalDadosSuperv').closeWindow();
+
+                        
+                                                                        }
+                                                                        
+                                                                        ]]>  
+                                                                </onClickScript>
+                                                    </ButtonWidget>  
+                                                </HorizontalLayout>
+                                            </VerticalLayout>
+                                                
+                                            </Panel>
+                    
+                                        </VerticalLayout>
+                                    </WindowLayout> 
+                                    
+                                    <DateField id="dtInicialCollection" type="date" caption="PERÍODO INICIAL:" resolution="DAY" format="dd/MM/yyyy" width="100%" description="PERÍODO INICIAL:" align="TOP_CENTER" expandRatio="1.0" visible="false"/>
+                                    <DateField id="dtFinalCollection" type="date" caption="PERÍODO FINAL:" resolution="DAY" format="dd/MM/yyyy" width="100%" description="PERÍODO FINAL:" align="TOP_CENTER" expandRatio="1.0" visible="false"/>
+                                    
+                                </HorizontalLayout> 
+                                <!-- *********************************************  -->
+
+                            </VerticalLayout>
+                        </Panel>
+
+					   <Panel width="100%" expandRatio="1" margin="false" id="pnlTitulo" backgroundColor="#EEEEEE"> 
+						  <VerticalLayout width="100%" margin="true" spacing="true">
+          
+                                <HorizontalLayout width="100%" spacing="true">
+
+                                <DBTable id="tblPedidos" type="number" width="100%"  rows="12" showRowCount="true" selectable="true" editable="true" drawRefreshButton="true" exportXLS="true" drawFilterButton="true" >
+                                    <datasource>
+
+                                        <sqlBuilderDataSource connection-key="vitruvio" language="JavaScript">
+                                                <![CDATA[ 
+
+                                                function buildSQL(params) {
+
+
+
+                                 var sql =  " SELECT X.CODCLI, X.CLIENTE, X.LIMCRED, X.VLTOTAL,                                                                                                                                  " +
+                                            " SUM(X.VLTOTAL_ATEND) AS VLTOTAL_ATEND,                                                                                                                                             " +
+                                            " X.STATUSTEXT,X.VLTOTAL_FINAGO, X.DTULTCOMP, X.VALOR_APROVADO, X.DATA_ENCERRAMENTO,                                                                                                 " +
+                                            " X.LOGIN_ABERTURA, X.CREDITLIMIT                                                                                                                                                    " +
+                                            " FROM                                                                                                                                                                               " +
+                                            " (                                                                                                                                                                                  " +
+                                            " SELECT DISTINCT                                                                                                                                                                    " +
+                                            "      DADOS.CODCLI,                                                                                                                                                                 " +
+                                            "      CLI.CLIENTE,                                                                                                                                                                  " +
+                                            "      CLI.LIMCRED,                                                                                                                                                                  " +
+                                            "      TO_CHAR((                                                                                                                                                                     " +
+                                            "      SELECT SUM(VLTOTAL) VLTOTAL FROM HAF.PCPEDC                                                                                                                                   " +
+                                            "      WHERE CODCLI = DADOS.CODCLI                                                                                                                                                   " +
+                                            "      AND POSICAO IN DECODE(${STATUSPED},'0', POSICAO,  ${STATUSPED})                                                                                                               " +
+                                            "      ),'999999990D99') AS VLTOTAL,                                                                                                                                                 " +
+                                            "      STATUS_VENDA AS VLTOTAL_ATEND,                                                                                                                                                " +
+                                            "      FL.STATUSTEXT,                                                                                                                                                                " +
+                                            "      FL.CREDITLIMIT AS VLTOTAL_FINAGO,                                                                                                                                             " +
+                                            "      CLI.DTULTCOMP,                                                                                                                                                                " +
+                                            "      DADOSPROCESSO.VALOR_APROVADO,                                                                                                                                                 " +
+                                            "      DADOSPROCESSO.DATA_ENCERRAMENTO,                                                                                                                                              " +
+                                            "      DADOSPROCESSO.LOGIN_ABERTURA,                                                                                                                                                 " +
+                                            "      DADOSPROCESSO.CREDITLIMIT                                                                                                                                                     " +
+                                            "           FROM(                                                                                                                                                                    " +
+                                            "                                                                                                                                                                                    " +
+                                            "               SELECT DISTINCT                                                                                                                                                      " +
+                                            "                   PI.CODPROD, PI.CODCLI, PC.POSICAO, PC.VLTOTAL, PI.NUMPED, PI.PVENDA, PRD.DESCRICAO,PI.QT, PRD.CODFORNEC,                                                         " +
+                                            "                   CASE WHEN (CASE WHEN (NVL(EST.QTESTGER,0) <= 0 )                                                                                                                 " +
+                                            "                   THEN 0                                                                                                                                                           " +
+                                            "                   ELSE                                                                                                                                                             " +
+                                            "                   CASE WHEN (NVL(EST.QTEST,0) <= 0 )                                                                                                                               " +
+                                            "                   THEN 0                                                                                                                                                           " +
+                                            "                   ELSE                                                                                                                                                             " +
+                                            "                   CASE WHEN (NVL(EST.QTESTGER,0) > NVL(EST.QTEST,0))                                                                                                               " +
+                                            "                   THEN                                                                                                                                                             " +
+                                            "                   TRUNC((NVL(EST.QTEST,0)   - (NVL(EST.QTRESERV,0)) - NVL(EST.QTBLOQUEADA, 0))  , 0)                                                                               " +
+                                            "                   ELSE                                                                                                                                                             " +
+                                            "                   TRUNC(( NVL(EST.QTESTGER, 0) - (NVL(EST.QTRESERV,0)) - NVL(EST.QTBLOQUEADA, 0)) , 0)                                                                             " +
+                                            "                   END                                                                                                                                                              " +
+                                            "                   END                                                                                                                                                              " +
+                                            "                   END) >= PI.QT THEN SUM(PI.QT * PI.PVENDA) ELSE 0 END AS STATUS_VENDA                                                                                             " +
+                                            "               FROM HAF.PCPEDI PI                                                                                                                                                   " +
+                                            "               INNER JOIN HAF.PCEST EST ON EST.CODPROD = PI.CODPROD AND EST.CODFILIAL IN ('1','4')                                                                                  " +
+                                            "               INNER JOIN HAF.PCPEDC PC ON PC.NUMPED = PI.NUMPED                                                                                                                    " +
+                                            "               INNER JOIN HAF.PCPRODUT PRD ON PRD.CODPROD = PI.CODPROD                                                                                                              " +
+                                            "               WHERE PC.DATA BETWEEN DECODE(${DTINICIAL},'0', PC.DATA,  ${DTINICIAL}) AND DECODE(${DTFINAL},'0', PC.DATA,  ${DTFINAL})                                             " +
+                                            "               AND PC.POSICAO IN DECODE(${STATUSPED},'0', PC.POSICAO,  ${STATUSPED})                                                                                                " +
+                                            "               AND PRD.CODFORNEC IN DECODE(${CODIGOFORNECEDOR},'0', PRD.CODFORNEC,  ${CODIGOFORNECEDOR})                                                                            " +
+                                            "               AND PC.CODCLI = DECODE(${CODIGOCLIENTE},'0', PC.CODCLI,  ${CODIGOCLIENTE})                                                                                           " +
+                                            "               AND PC.NUMPED = DECODE(${NUMEROPEDIDO},'0', PC.NUMPED,  ${NUMEROPEDIDO})                                                                                             " +
+                                            "               GROUP BY PC.POSICAO, PI.CODPROD,PI.CODCLI,PC.VLTOTAL, PI.NUMPED,PI.QT,PI.PVENDA,PRD.DESCRICAO, EST.QTESTGER, EST.QTEST, EST.QTRESERV, EST.QTBLOQUEADA, PRD.CODFORNEC " +
+                                            "           )DADOS                                                                                                                                                                   " +
+                                            "           INNER JOIN HAF.PCCLIENT CLI ON CLI.CODCLI = DADOS.CODCLI AND CLI.CODUSUR1 IN DECODE(${CODIGORCA},'0', CLI.CODUSUR1,  ${CODIGORCA})                                                                                                                " +
+                                            "           LEFT JOIN EX_FINAGO_LIMIT FL ON FL.DOCUMENT = REPLACE(REPLACE(REPLACE(CLI.CGCENT, '.', ''), '/', ''), '-', '')                                                            " +
+                                            "           INNER JOIN HAF.PCUSUARI US ON US.CODUSUR = CLI.CODUSUR1                                                                                                                   " +
+                                            "           INNER JOIN HAF.PCSUPERV SUPV ON US.CODSUPERVISOR = SUPV.CODSUPERVISOR AND SUPV.CODSUPERVISOR IN DECODE(${CODIGOSUPERVISOR},'0', SUPV.CODSUPERVISOR,  ${CODIGOSUPERVISOR}) " +
+                                            "           INNER JOIN HAF.PCGERENTE G ON G.CODGERENTE = SUPV.CODGERENTE AND G.CODGERENTE IN DECODE(${CODIGOGERENTE},'0', G.CODGERENTE,  ${CODIGOGERENTE})                            " +
+                                            "           LEFT JOIN (                                                                                                                                                               " +
+                                            "           SELECT DFINAL.*,                                                                                                                                                          " +
+                                            "            TO_CHAR(REPLACE((                                                                                                                                                       " +
+                                            "            SELECT DADOS.VALOR_APROVADO FROM                                                                                                                                        " +
+                                            "            (                                                                                                                                                                       " +
+                                            "             SELECT 'R$ ' || REPLACE(REPLACE(TO_CHAR(DOUBLE_,'FM999G999G999G999D99'),'.',''),',','.')||',00' AS VALOR_APROVADO,INSTANCIA_ID                                         " +
+                                            "             FROM act_hi_taskinst T                                                                                                                                                 " +
+                                            "             INNER JOIN PROCESSO_INSTANCIA PI ON PI.BPMN_PROCESS_INSTANCE = T.PROC_INST_ID_                                                                                         " +
+                                            "             INNER JOIN act_hi_varinst VTVENDA ON VTVENDA.proc_inst_id_ = PI.BPMN_PROCESS_INSTANCE                                                                                  " +
+                                            "             AND VTVENDA.NAME_ = 'formEmitirParecer_novoLimiteCredito'                                                                                                              " +
+                                            "             UNION ALL                                                                                                                                                              " +
+                                            "             SELECT 'R$ ' || REPLACE(REPLACE(TO_CHAR(TEXT_,'FM999G999G999G999D99'),'.',''),',','.')||',00' AS VALOR_APROVADO,INSTANCIA_ID                                           " +
+                                            "             FROM act_hi_taskinst T                                                                                                                                                 " +
+                                            "             INNER JOIN PROCESSO_INSTANCIA PI ON PI.BPMN_PROCESS_INSTANCE = T.PROC_INST_ID_                                                                                         " +
+                                            "             INNER JOIN act_hi_varinst VTVENDA ON VTVENDA.proc_inst_id_ = PI.BPMN_PROCESS_INSTANCE                                                                                  " +
+                                            "             AND VTVENDA.NAME_ = 'formAnalisarClienteAnaliseCredito_limiteSugerido'                                                                                                 " +
+                                            "             UNION ALL                                                                                                                                                              " +
+                                            "             SELECT 'R$ ' || REPLACE(REPLACE(TO_CHAR(DOUBLE_,'FM999G999G999G999D99'),'.',''),',','.')||',00' AS VALOR_APROVADO, INSTANCIA_ID                                        " +
+                                            "             FROM act_hi_taskinst T                                                                                                                                                 " +
+                                            "             INNER JOIN PROCESSO_INSTANCIA PI ON PI.BPMN_PROCESS_INSTANCE = T.PROC_INST_ID_                                                                                         " +
+                                            "             INNER JOIN act_hi_varinst VTVENDA ON VTVENDA.proc_inst_id_ = PI.BPMN_PROCESS_INSTANCE                                                                                  " +
+                                            "             AND VTVENDA.NAME_ = 'formParecerSuperior_novoLimiteCreditoAnaliseFinal'                                                                                                " +
+                                            "            )DADOS                                                                                                                                                                  " +
+                                            "           WHERE DADOS.INSTANCIA_ID = DFINAL.ID_PROCESSO                                                                                                                            " +
+                                            "           AND DADOS.VALOR_APROVADO IS NOT NULL                                                                                                                                     " +
+                                            "           AND ROWNUM=1                                                                                                                                                             " +
+                                            "           ),'.0',',0')) AS VALOR_APROVADO,                                                                                                                                         " +
+                                            "           (                                                                                                                                                                        " +
+                                            "           SELECT DADOS.LOGIN_ABERTURA FROM                                                                                                                                         " +
+                                            "           (                                                                                                                                                                        " +
+                                            "           SELECT LOGIN_ABERTURA,INSTANCIA_ID                                                                                                                                       " +
+                                            "           FROM act_hi_taskinst T                                                                                                                                                   " +
+                                            "           INNER JOIN PROCESSO_INSTANCIA PI ON PI.BPMN_PROCESS_INSTANCE = T.PROC_INST_ID_                                                                                           " +
+                                            "           INNER JOIN act_hi_varinst VTVENDA ON VTVENDA.proc_inst_id_ = PI.BPMN_PROCESS_INSTANCE                                                                                    " +
+                                            "           AND VTVENDA.NAME_ = 'formEmitirParecer_novoLimiteCredito'                                                                                                                " +
+                                            "           UNION ALL                                                                                                                                                                " +
+                                            "           SELECT LOGIN_ABERTURA,INSTANCIA_ID                                                                                                                                       " +
+                                            "           FROM act_hi_taskinst T                                                                                                                                                   " +
+                                            "           INNER JOIN PROCESSO_INSTANCIA PI ON PI.BPMN_PROCESS_INSTANCE = T.PROC_INST_ID_                                                                                           " +
+                                            "           INNER JOIN act_hi_varinst VTVENDA ON VTVENDA.proc_inst_id_ = PI.BPMN_PROCESS_INSTANCE                                                                                    " +
+                                            "           AND VTVENDA.NAME_ = 'formAnalisarClienteAnaliseCredito_limiteSugerido'                                                                                                   " +
+                                            "           UNION ALL                                                                                                                                                                " +
+                                            "           SELECT LOGIN_ABERTURA,INSTANCIA_ID                                                                                                                                       " +
+                                            "           FROM act_hi_taskinst T                                                                                                                                                   " +
+                                            "           INNER JOIN PROCESSO_INSTANCIA PI ON PI.BPMN_PROCESS_INSTANCE = T.PROC_INST_ID_                                                                                           " +
+                                            "           INNER JOIN act_hi_varinst VTVENDA ON VTVENDA.proc_inst_id_ = PI.BPMN_PROCESS_INSTANCE                                                                                    " +
+                                            "           AND VTVENDA.NAME_ = 'formParecerSuperior_novoLimiteCreditoAnaliseFinal'                                                                                                  " +
+                                            "           )DADOS                                                                                                                                                                   " +
+                                            "           WHERE DADOS.INSTANCIA_ID =  DFINAL.ID_PROCESSO                                                                                                                           " +
+                                            "           AND ROWNUM=1                                                                                                                                                             " +
+                                            "        ) AS LOGIN_ABERTURA,                                                                                                                                                        " +
+                                            "           (                                                                                                                                                                        " +
+                                            "           SELECT DADOS.DATA_ENCERRAMENTO FROM                                                                                                                                      " +
+                                            "           (                                                                                                                                                                        " +
+                                            "           SELECT TO_CHAR(DOUBLE_) AS VALOR_APROVADO,INSTANCIA_ID,DATA_ENCERRAMENTO                                                                                                 " +
+                                            "           FROM act_hi_taskinst T                                                                                                                                                   " +
+                                            "           INNER JOIN PROCESSO_INSTANCIA PI ON PI.BPMN_PROCESS_INSTANCE = T.PROC_INST_ID_                                                                                           " +
+                                            "           INNER JOIN act_hi_varinst VTVENDA ON VTVENDA.proc_inst_id_ = PI.BPMN_PROCESS_INSTANCE                                                                                    " +
+                                            "           AND VTVENDA.NAME_ = 'formEmitirParecer_novoLimiteCredito'                                                                                                                " +
+                                            "           UNION ALL                                                                                                                                                                " +
+                                            "           SELECT TO_CHAR(TEXT_) AS VALOR_APROVADO,INSTANCIA_ID,DATA_ENCERRAMENTO                                                                                                   " +
+                                            "           FROM act_hi_taskinst T                                                                                                                                                   " +
+                                            "           INNER JOIN PROCESSO_INSTANCIA PI ON PI.BPMN_PROCESS_INSTANCE = T.PROC_INST_ID_                                                                                           " +
+                                            "           INNER JOIN act_hi_varinst VTVENDA ON VTVENDA.proc_inst_id_ = PI.BPMN_PROCESS_INSTANCE                                                                                    " +
+                                            "           AND VTVENDA.NAME_ = 'formAnalisarClienteAnaliseCredito_limiteSugerido'                                                                                                   " +
+                                            "           UNION ALL                                                                                                                                                                " +
+                                            "           SELECT TO_CHAR(DOUBLE_) AS VALOR_APROVADO, INSTANCIA_ID, DATA_ENCERRAMENTO                                                                                               " +
+                                            "           FROM act_hi_taskinst T                                                                                                                                                   " +
+                                            "           INNER JOIN PROCESSO_INSTANCIA PI ON PI.BPMN_PROCESS_INSTANCE = T.PROC_INST_ID_                                                                                           " +
+                                            "           INNER JOIN act_hi_varinst VTVENDA ON VTVENDA.proc_inst_id_ = PI.BPMN_PROCESS_INSTANCE                                                                                    " +
+                                            "           AND VTVENDA.NAME_ = 'formParecerSuperior_novoLimiteCreditoAnaliseFinal'                                                                                                  " +
+                                            "           )DADOS                                                                                                                                                                   " +
+                                            "           WHERE DADOS.INSTANCIA_ID =  DFINAL.ID_PROCESSO                                                                                                                           " +
+                                            "           AND DADOS.VALOR_APROVADO IS NOT NULL                                                                                                                                     " +
+                                            "           AND ROWNUM=1                                                                                                                                                             " +
+                                            "            ) AS DATA_ENCERRAMENTO                                                                                                                                                  " +
+                                            "           FROM                                                                                                                                                                     " +
+                                            "           (                                                                                                                                                                        " +
+                                            "           SELECT DISTINCT                                                                                                                                                          " +
+                                            "           CLI.CODCLI,                                                                                                                                                              " +
+                                            "           CLI.CLIENTE,                                                                                                                                                             " +
+                                            "           CLI.LIMCRED,                                                                                                                                                             " +
+                                            "           CLI.CODUSUR1,                                                                                                                                                            " +
+                                            "           CLI.DTCADASTRO,                                                                                                                                                          " +
+                                            "           CLI.CODCOB,                                                                                                                                                              " +
+                                            "           CLI.CODATV1,                                                                                                                                                             " +
+                                            "           CLI.BLOQUEIO,                                                                                                                                                            " +
+                                            "           L.STATUSID,                                                                                                                                                              " +
+                                            "           L.STATUSTEXT,                                                                                                                                                            " +
+                                            "           L.CREATEDATE,                                                                                                                                                            " +
+                                            "           L.CREDITLIMITDATE,                                                                                                                                                       " +
+                                            "           L.CREDITLIMIT,                                                                                                                                                           " +
+                                            "           TRUNC(L.CREDITLIMITAVAILABLE) AS CREDITLIMITAVAILABLE,                                                                                                                   " +
+                                            "           L.DTULTIMAALTERACAO,                                                                                                                                                     " +
+                                            "           D.LIMITETOTAL,                                                                                                                                                           " +
+                                            "           D.LIMITERESERVADO,                                                                                                                                                       " +
+                                            "           D.LIMITEUTILIZADO,                                                                                                                                                       " +
+                                            "           D.LIMITEDISPONIVEL,                                                                                                                                                      " +
+                                            "           D.DATACONSULTAFINA,                                                                                                                                                      " +
+                                            "           D.DATAVALIDADE,                                                                                                                                                          " +
+                                            "           D.DTATUALIZACAOLIMIT,                                                                                                                                                    " +
+                                            "            (                                                                                                                                                                       " +
+                                            "           SELECT MAX(INSTANCIA_ID) AS ID_PROCESSO                                                                                                                                  " +
+                                            "           FROM                                                                                                                                                                     " +
+                                            "           (                                                                                                                                                                        " +
+                                            "           SELECT DISTINCT INSTANCIA_ID, SUBSTR(DESCRICAO,39,44) AS CODIGO_CLIENTE, TO_CHAR(DOUBLE_) AS VALOR_APROVADO, CASE WHEN LENGTH(DOUBLE_)>0 THEN 'NOVO_LIMITE_CREDITO'      " +
+                                            "           ELSE 'VALOR NÃO INFORMADO1' END AS STATUS, LOGIN_ABERTURA, DATA_ENCERRAMENTO     ,DELETE_REASON_                                                                         " +
+                                            "           FROM act_hi_taskinst T                                                                                                                                                   " +
+                                            "           INNER JOIN PROCESSO_INSTANCIA PI ON PI.BPMN_PROCESS_INSTANCE = T.PROC_INST_ID_                                                                                           " +
+                                            "           INNER JOIN act_hi_varinst VTVENDA ON VTVENDA.proc_inst_id_ = PI.BPMN_PROCESS_INSTANCE                                                                                    " +
+                                            "           AND VTVENDA.NAME_ = 'formEmitirParecer_novoLimiteCredito'                                                                                                                " +
+                                            "           AND TASK_DEF_KEY_ = 'tskEmitirParecer'                                                                                                                                   " +
+                                            "           AND DELETE_REASON_ = 'completed'                                                                                                                                         " +
+                                            "           AND TRUNC(END_TIME_) > TRUNC(SYSDATE-120)                                                                                                                                " +
+                                            "           UNION ALL                                                                                                                                                                " +
+                                            "           SELECT DISTINCT INSTANCIA_ID,SUBSTR(DESCRICAO,39,44) AS CODIGO_CLIENTE, TO_CHAR(TEXT_) AS VALOR_APROVADO, CASE WHEN LENGTH(TEXT_)>0 THEN 'LIMITE_SUGERIDO'               " +
+                                            "           ELSE 'VALOR NÃO INFORMADO2' END AS STATUS, LOGIN_ABERTURA, DATA_ENCERRAMENTO  ,DELETE_REASON_                                                                            " +
+                                            "           FROM act_hi_taskinst T                                                                                                                                                   " +
+                                            "           INNER JOIN PROCESSO_INSTANCIA PI ON PI.BPMN_PROCESS_INSTANCE = T.PROC_INST_ID_                                                                                           " +
+                                            "           INNER JOIN act_hi_varinst VTVENDA ON VTVENDA.proc_inst_id_ = PI.BPMN_PROCESS_INSTANCE                                                                                    " +
+                                            "           AND VTVENDA.NAME_ = 'formAnalisarClienteAnaliseCredito_limiteSugerido'                                                                                                   " +
+                                            "           AND TASK_DEF_KEY_ = 'tskValidarTermoResponsabilidade'                                                                                                                    " +
+                                            "           AND DELETE_REASON_ = 'completed'                                                                                                                                         " +
+                                            "           AND TRUNC(END_TIME_) > TRUNC(SYSDATE-120)                                                                                                                                " +
+                                            "           UNION ALL                                                                                                                                                                " +
+                                            "           SELECT DISTINCT INSTANCIA_ID, SUBSTR(DESCRICAO,39,44) AS CODIGO_CLIENTE, TO_CHAR(DOUBLE_) AS VALOR_APROVADO, CASE WHEN LENGTH(DOUBLE_)>0 THEN 'LIMITE-ANALISE-FINAL'     " +
+                                            "           ELSE 'VALOR NÃO INFORMADO3' END AS STATUS, LOGIN_ABERTURA, DATA_ENCERRAMENTO  ,DELETE_REASON_                                                                            " +
+                                            "           FROM act_hi_taskinst T                                                                                                                                                   " +
+                                            "           INNER JOIN PROCESSO_INSTANCIA PI ON PI.BPMN_PROCESS_INSTANCE = T.PROC_INST_ID_                                                                                           " +
+                                            "           INNER JOIN act_hi_varinst VTVENDA ON VTVENDA.proc_inst_id_ = PI.BPMN_PROCESS_INSTANCE                                                                                    " +
+                                            "           AND VTVENDA.NAME_ = 'formParecerSuperior_novoLimiteCreditoAnaliseFinal'                                                                                                  " +
+                                            "           AND TASK_DEF_KEY_ = 'tskParecerSuperior'                                                                                                                                 " +
+                                            "           AND DELETE_REASON_ = 'completed'                                                                                                                                         " +
+                                            "           AND TRUNC(END_TIME_) > TRUNC(SYSDATE-120)                                                                                                                                " +
+                                            "           )DADOS                                                                                                                                                                   " +
+                                            "           WHERE DADOS.VALOR_APROVADO IS NOT NULL                                                                                                                                   " +
+                                            "           AND DADOS.DATA_ENCERRAMENTO IS NOT NULL                                                                                                                                  " +
+                                            "           AND DADOS.CODIGO_CLIENTE = CLI.CODCLI                                                                                                                                    " +
+                                            "           ) AS ID_PROCESSO                                                                                                                                                         " +
+                                            "           FROM HAF.PCCLIENT CLI                                                                                                                                                    " +
+                                            "           INNER JOIN EX_FINAGO_LIMIT L ON L.DOCUMENT = REPLACE(REPLACE(REPLACE(CLI.CGCENT, '.', ''), '/', ''), '-', '')                                                            " +
+                                            "           INNER JOIN EX_FINAGO_DOWNLOAD D ON D.CNPJ = L.DOCUMENT                                                                                                                   " +
+                                            "           WHERE STATUSTEXT IN ('Aprovado','Inadimplente','Bloqueado','Reprovado')                                                                                                  " +
+                                            "           )DFINAL                                                                                                                                                                  " +
+                                            "          )DADOSPROCESSO ON DADOSPROCESSO.CODCLI = CLI.CODCLI                                                                                                                       " +
+                                            " GROUP BY DADOS.CODCLI, CLI.CLIENTE, CLI.LIMCRED, FL.STATUSTEXT,FL.CREDITLIMIT,CLI.DTULTCOMP,DADOSPROCESSO.VALOR_APROVADO, DADOSPROCESSO.VALOR_APROVADO,                            " +
+                                            " DADOSPROCESSO.DATA_ENCERRAMENTO, DADOSPROCESSO.LOGIN_ABERTURA, DADOSPROCESSO.CREDITLIMIT, STATUS_VENDA                                                                             " +
+                                            " )X                                                                                                                                                                                 " +
+                                            " GROUP BY X.CODCLI, X.CLIENTE, X.LIMCRED, X.VLTOTAL, X.STATUSTEXT, X.VLTOTAL_FINAGO, X.DTULTCOMP,                                                                                   " +
+                                            " X.VALOR_APROVADO, X.DATA_ENCERRAMENTO, X.LOGIN_ABERTURA, X.CREDITLIMIT                                                                                                             " +
+                                            " ORDER BY X.DTULTCOMP DESC                                                                                                                                                          " ;
+
+
+
+
+     
+                                                                
+
+
+ 
+                                                    return sql;
+ 
+                                                }
+
+                                                
+                                                ]]>
+                                        </sqlBuilderDataSource>
+
+                             
+
+                                    </datasource>
+    
+                                    <key-field>CODCLI</key-field>
+                
+                                    <columns>                
+                                        
+                                         <!-- <generated name="DADOS_CLIENTE" align="CENTER" caption="INFO">
+
+                                            <scriptColumnGenerator language="JavaScript">
+                                                <![CDATA[
+                                                importClass(Packages.br.com.davinti.base.vaadin.components.layout.ConfirmationBox);
+                                                importClass(Packages.br.com.davinti.base.vaadin.components.layout.MessageBox);    
+                                                importClass(Packages.br.com.davinti.vitruvio.ui.core.VitruvioTheme);
+                                                importClass(Packages.br.com.davinti.base.vaadin.components.layout.MessageBox);
+                                                
+                                                var componentes = libService.loadScript('vaadinComponents');
+
+                                                
+                                                
+                                                function generate(itemId, columnId, item) {
+    
+                                                        var btn=componentes.button('',function(){ 
+                                                            
+                                                        var numpedido = item.getItemProperty('NUMPED').getValue();
+
+                                                        var tblDadosPedidos = engine.getField('tblDadosPedidos').size()
+
+                                                        if(tblDadosPedidos > 0){
+                                                            engine.getField('tblDadosPedidos').setValue(numpedido);
+                                                            engine.getField('tblDatasPedido').setValue(numpedido);
+                                                            engine.getLayout('modalDadosPedido').showWindow();
+                                                        }else{
+                                                            return  MessageBox.show('ATENÇÃO', 'Clique na linha do pedido que você deseja saber as informações detalhadas e selecione o botão novamente.');
+                                                        }
+                                                        
+                                                        });
+
+                                                        
+                                                    
+                                                        btn.setIcon(FontAwesome.INFO);
+                                                        btn.setDescription('Excluir Arquivo');
+                                                        btn.addStyleName(VitruvioTheme.BUTTON_SMALL);
+                                                        btn.addStyleName(VitruvioTheme.BUTTON_BORDERLESS_COLORED);
+                                                        btn.addStyleName(VitruvioTheme.ANIMATE.ZOOM_IN);
+                                                                                                                                                                                                        
+                                                        return btn;
+                                                    }
+                                                    ]]>
+                                                </scriptColumnGenerator>
+                                            </generated>  -->
+
+                                            
+                                                                 
+                                        <!-- <column name="NUMPED" caption="NUMPED" expand-ratio="1.0"/>  -->
+                                        <column name="CODCLI" caption="CODCLI" expand-ratio="1.0"/>   
+                                        <column name="CLIENTE" caption="CLIENTE" expand-ratio="1.0"/>   
+                                        <column name="ORIGEM" caption="ORIGEM" expand-ratio="1.0"/>   
+                                        <column name="VLTOTAL" caption="VL TOTAL PEDIDOS" format="R$#,##0.00" decimalSeparator="," groupingSeparator="." expand-ratio="1.0"/>   
+                                        <column name="VLTOTAL_ATEND" caption="VL ATENDIDO HAF" format="R$#,##0.00" decimalSeparator="," groupingSeparator="." expand-ratio="1.0"/>   
+                                        <!-- <column name="VLATEND" caption="VLATEND" format="R$#,##0.00" decimalSeparator="," groupingSeparator="." expand-ratio="1.0"/>    -->
+                                        <!-- <column name="POSICAO_PCPEDC" caption="STATUS" expand-ratio="1.0"/>    -->
+                                        <!-- <column name="DATA" caption="DT PEDIDO" format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>   -->
+                                        <!-- <column name="DTENTREGA_PC" caption="DT ENTREGA" format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>   -->                                        
+                                        <!-- <column name="TEMPO_ATUAL_BLOQUEADO" caption="TEMPO BLOQ/CANC" expand-ratio="1.0"/>   
+                                        <column name="QTD_DIAS_INICIO_SEPARACAO" caption="TEMPO INICIO SEPARAÇÃO." expand-ratio="1.0"/>   
+                                        <column name="DT_FIM_SEP" caption="TEMPO FIM SEPARAÇÃO"  expand-ratio="1.0" />   
+                                        <column name="TEMPO_TOTAL" caption="TEMPO TOTAL" expand-ratio="1.0" />   -->
+
+                                        <column name="LIMCRED" caption="LIMITE DISPO HAF" format="R$#,##0.00" decimalSeparator="," groupingSeparator="." expand-ratio="1.0" />   
+                                        <column name="CREDITLIMIT" caption="LIMITE TOTAL FINAGO" format="R$#,##0.00" decimalSeparator="," groupingSeparator="." expand-ratio="1.0" />   
+                                        <column name="VALOR_APROVADO" caption="VL APROVADO PROCESSO" format="R$#,##0.00" decimalSeparator="," groupingSeparator="." expand-ratio="1.0" />   
+                                        <column name="STATUSTEXT" caption="STATUS FINAGO" expand-ratio="1.0" />   
+                                        <column name="DTULTCOMP" caption="DT ULT COMP" expand-ratio="1.0" format="dd/MM/YYYY" type="date"  />   
+
+                                        
+                                        <generated name="ProcessoCadastral" caption="PROCESSO"  >
+                                            <scriptColumnGenerator language="JavaScript">
+                                                <![CDATA[  
+                                                    var vc = libService.loadScript('vaadinComponents');
+                                                    importClass(Packages.br.com.davinti.base.vaadin.components.layout.MessageBox);                                                          
+                                                    var db =  libService.loadScript('db');
+                                                    var conection =new db('vitruvio');
+                                                    var vitruvio = libService.loadScript('vUI');
+ 
+                                                    function generate(itemId, columnId, item, container) {
+    
+                                                        var idBpmn = item.getItemProperty('ID_BMPN').getValue(); 
+
+                                                         var btnProcesso = 'Não consta Processo'
+
+                                                        if(idBpmn){
+                                                            btnProcesso = vc.buttonIcon('Abrir Processo',function() {                                                                 
+                                                                vUIUtils.showProcessData(idBpmn);
+                                                                }, 'TASKS');
+                                                        }else{
+                                                            return btnProcesso;
+                                                        }
+
+
+                                                   
+                                                        btnProcesso.setDescription('Abrir Processo');  
+                                                        return btnProcesso;
+                                                    }
+                                                ]]>
+                                            </scriptColumnGenerator>
+                                        </generated> 
+
+
+                                        <column name="DATA_ENCERRAMENTO" caption="DT ENCERRAMENTO PROC" format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>  
+                                        <!-- <column name="LOGIN_ABERTURA" caption="SOLICITANTE" expand-ratio="1.0" />    -->                                       
+                                        <column name="ORIGEM" caption="ORIGEM" expand-ratio="1.0" />   
+                                        <column name="STATUSTRATAMENTO" caption="VALIDAÇÃO:" editable="true"/>
+
+                                        <generated name="OBSERVACAOBLOQUEADO" align="CENTER" caption="OBSERVAÇÃO BLOQUEIO">
+
+                                            <scriptColumnGenerator language="JavaScript">
+                                                <![CDATA[
+                                                importClass(Packages.br.com.davinti.base.vaadin.components.layout.ConfirmationBox);
+                                                importClass(Packages.br.com.davinti.base.vaadin.components.layout.MessageBox);    
+                                                importClass(Packages.br.com.davinti.vitruvio.ui.core.VitruvioTheme);
+                                                importClass(Packages.br.com.davinti.base.vaadin.components.layout.MessageBox);
+                                                var db=libService.loadScript('db');
+                                                var connection=new db('vitruvio');  
+                                                
+                                                engine.getField('tblDadosQtd').setValue('')
+                                                
+                                                var componentes = libService.loadScript('vaadinComponents');
+
+                                                
+                                                
+                                                function generate(itemId, columnId, item) {
+    
+                                                        var btn=componentes.button('',function(){                                                             
+                                                                    
+                                                        var sqlDadosCli =   " SELECT DISTINCT CLI.CODCLI, CLI.CLIENTE                " +
+                                                                            " FROM HAF.PCPEDC PC                                     " +
+                                                                            " INNER JOIN HAF.PCCLIENT CLI ON CLI.CODCLI = PC.CODCLI  " +
+                                                                            " WHERE NUMPED = :CODCLI                                 " ; 
+
+                                                        try{
+                                                            var codigoCliente = item.getItemProperty('CODCLI').getValue();
+                                                            var resDados = connection.queryRow(sqlDadosCli,{CODCLI: codigoCliente});
+
+                                                            if(resDados){
+                                                                engine.getField('nomeCliente').setValue(String(resDados.CLIENTE))
+                                                            }
+                                                            
+                                                            engine.getLayout('modalObservacaoPedidos').showWindow();
+
+                                                        }catch(e){
+                                                             MessageBox.show('ERRO', 'Não foi possível abrir o modal. Error: '+ e);
+                                                        }
+                                                        
+                                                        });
+
+                                                        
+                                                    
+                                                        btn.setIcon(FontAwesome.PENCIL);
+                                                        btn.setDescription('Informar validação realizada.');
+                                                        
+                                                        btn.addStyleName(VitruvioTheme.BUTTON_BORDERLESS_COLORED_DANGER );
+                                                        btn.addStyleName(VitruvioTheme.ANIMATE.ANIMATE_FADE_IN_DOWN);
+                                                                                                                                                                                                        
+                                                        return btn;
+                                                    }
+                                                    ]]>
+                                                </scriptColumnGenerator>
+                                            </generated> 
+
+
+                                        
+                                    <!-- 
+                                        
+                                        <generated name="OBSERVAÇÃO_BLOQUEIO" caption="OBSERVAÇÃO ATENDIMENTO BLOQUEIO" align="CENTER"  expand-ratio="3.0" cache="true">
+                                        <scriptColumnGenerator language="JavaScript">
+                                            <![CDATA[
+
+                                                var componentes = libService.loadScript('vaadinComponents');
+
+                                                function generate(itemId, columnId, item) {
+                                                    
+                                                   
+                                                    
+                                                    var posicaoPedido = item.getItemProperty('POSICAO_PCPEDC').getValue();
+                                                    var numPedido = item.getItemProperty('NUMPED').getValue();
+                                                    var tempoBloqueio = item.getItemProperty('TEMPO_ATUAL_BLOQUEADO').getValue();
+
+
+                                                     /*
+
+                                                   
+                                                    var db= libService.loadScript('db');
+                                                    var connection=new db('vitruvio');
+
+                                                    var sqlProdutosCollections= " SELECT CP.COD_PRODUTO,C.COD_CATEGORIA,D.COD_DEPARTAMENTO,D.NOME_DEPARTAMENTO,S.COD_SECAO,S.NOME_SECAO,C.NOME_CATEGORIA,    " +
+                                                                                " (D.NOME_DEPARTAMENTO|| '->' || S.NOME_SECAO || '->' || C.NOME_CATEGORIA) AS COLECAO                                        " +
+                                                                                " FROM HAF.OCC_CATEGORIA C                                                                                                   " +
+                                                                                " INNER JOIN HAF.OCC_SECAO S ON S.COD_SECAO=C.COD_SECAO                                                                      " +
+                                                                                " INNER JOIN HAF.OCC_DEPARTAMENTO D ON D.COD_DEPARTAMENTO=S.COD_DEPARTAMENTO                                                 " +
+                                                                                " INNER JOIN HAF.OCC_CATEGORIA_PRODUTO CP ON CP.COD_CATEGORIA=C.COD_CATEGORIA                                                " +
+                                                                                " WHERE CP.COD_PRODUTO= :COD_PRODUTO                                                                                         " +
+                                                                                " ORDER BY D.NOME_DEPARTAMENTO,S.NOME_SECAO,C.NOME_CATEGORIA                                                                 " ;
+
+                                                    var produtoCollections= [];
+
+                                                    connection.query(sqlProdutosCollections,{COD_PRODUTO: codProduto}).each(function(row){
+                                                        produtoCollections.push(row.COLECAO);
+                                                    });
+                                                    
+                                                    produtoCollections= produtoCollections.toString().replace(",", "\n");   
+                                                                                                
+                                                    */ 
+
+                                                    var textArea = ' - ';
+
+                                                    if(tempoBloqueio >= 3){
+                                                        textArea=componentes.textArea(null,' - ');                                                                                                                     
+                                                        textArea.setWidth('100%');
+                                                        textArea.setWordwrap(false);
+                                                        textArea.setRows(1);                                                                                                        
+                                                        textArea.setReadOnly(false);
+                                                    }
+                                                
+                                                    return textArea;                                                    
+                                                   
+                                                }
+
+
+
+                                                
+                                            ]]>
+                                        </scriptColumnGenerator>
+                                        </generated> 
+                                         
+                                         -->
+
+                                    </columns>
+
+
+                                    <bind refreshOnChange="true">
+                                        <parameter parameterName="STATUSPED" defaultValue="0" value-type="string" field-ref="statusPedido" />
+                                        <parameter parameterName="DTINICIAL" defaultValue="0" value-type="date" field-ref="dtInicial" />
+                                        <parameter parameterName="DTFINAL" defaultValue="0" value-type="date" field-ref="dtFinal" />
+
+                                        <parameter parameterName="CODIGOFORNECEDOR" defaultValue="0" value-type="string" field-ref="twinFornecedores" />                                        
+                                        <parameter parameterName="CODIGOGERENTE" defaultValue="0" value-type="string" field-ref="twinDadosGerente" />
+                                        <parameter parameterName="CODIGOCLIENTE" defaultValue="0" value-type="string" field-ref="codigoCliente" />
+                                        <parameter parameterName="CODIGORCA" defaultValue="0" value-type="string" field-ref="twinDadosRca" />
+                                        <parameter parameterName="CODIGOSUPERVISOR" defaultValue="0" value-type="string" field-ref="twinDadosSuperv" />
+                                        <parameter parameterName="NUMEROPEDIDO" defaultValue="0" value-type="string" field-ref="numeroPedido" />                      
+                                    </bind>                                                                         
+                                               
+                        <!-- <styleGenerator>
+                            <scriptGenerator language="JavaScript">
+                                <![CDATA[        
+                                    function getStyle(itemId, columnId, item) {
+                                
+                                        var status = item.getItemProperty('POSICAO_PCPEDC').getValue();      
+                                        if(columnId == 'STATUS'){                                         
+                                            if(status == 'P' || status == 'B')return "background-light-red";                                                 
+                                        }
+
+                                    }                                                 
+                                ]]>
+                            </scriptGenerator>
+                        </styleGenerator>    -->
+<!--                                     
+                          <styleGenerator>
+                            <scriptGenerator language="JavaScript">
+                                        <![CDATA[
+
+                                        
+                                        function getStyle(itemId, columnId, item) {
+                                            
+                                        var tempoTotal = item.getItemProperty('TEMPO_TOTAL').getValue();
+                                        var qtdDiasWMS = item.getItemProperty('DT_FIM_SEP').getValue();
+                                        var qtdDiasLiberado = item.getItemProperty('QTD_DIAS_INICIO_SEPARACAO').getValue();
+                                    
+                               
+                                    var qtdDiasBloqueado = item.getItemProperty('TEMPO_ATUAL_BLOQUEADO').getValue();                                  
+                                    if(columnId == 'TEMPO_ATUAL_BLOQUEADO'){                                         
+                                        if(qtdDiasBloqueado >= 2)return "background-light-red";    
+                                        if(qtdDiasBloqueado == 1) return "background-light-yellow";   
+                                        if(qtdDiasBloqueado < 1) return "background-light-green";                                              
+                                    }
+                                   
+
+                                    if(columnId == 'DT_FIM_SEP'){                                         
+                                        if(qtdDiasWMS > 2)return "background-light-red";    
+                                        if(qtdDiasWMS == 1) return "background-light-yellow";   
+                                        if(qtdDiasWMS < 1) return "background-light-green";                                              
+                                    }
+
+                                    if(columnId == 'QTD_DIAS_INICIO_SEPARACAO'){                                         
+                                        if(qtdDiasLiberado > 2)return "background-light-red";    
+                                        if(qtdDiasLiberado == 1) return "background-light-yellow";   
+                                        if(qtdDiasLiberado < 1) return "background-light-green";                                              
+                                    }
+
+         
+                                 }             
+                                    
+                                    
+                                ]]>
+                                    </scriptGenerator>
+                        </styleGenerator>  -->
+
+                        
+
+                         <!-- <editableFieldsGenerator>
+                            <scriptGenerator language="JavaScript">
+                                <![CDATA[ 
+                                    var components=libService.loadScript('vaadinComponents');
+
+
+                                    
+                                    function createField(itemId, columnId, item, factory) {
+                                    
+                                        var qtdDiasBloqueado = item.getItemProperty('TEMPO_ATUAL_BLOQUEADO').getValue();
+                                        
+                                        if(columnId == 'STATUSTRATAMENTO') {
+
+                                            var combo=components.comboBox('',null,{
+                                                data:{
+                                                    BLOQUEIOVALIDADO: 'BLOQUEIO VALIDADO',
+                                                    SEMVALIDACAO: 'SEM VALIDAÇÃO'
+                                                },
+                                                allowNull: false,
+                                            });
+    
+                                            combo.setWidth('100%');
+  
+
+                                            if(qtdDiasBloqueado >= 3){
+                                                return combo;
+                                            }else{
+                                                combo = '-'
+                                                return combo
+                                            }
+
+                                            
+                                        }
+
+
+                                        return factory.create();
+                                    }
+                                ]]>
+                                </scriptGenerator>
+                            </editableFieldsGenerator>   -->
+
+                        </DBTable>
+ 
+                                <WindowLayout id="modalDadosPedido" windowModal="true" windowClosable="true" windowResizable="false" windowTitle="Dados do Pedido" windowWidth="100%" windowHeight="80%" >
+                                    <VerticalLayout margin="true" spacing="true" width="100%">
+
+                                        
+                                <Panel width="100%" expandRatio="1" margin="false" id="pnlTitulo" backgroundColor="#EEEEEE"> 
+                                    <VerticalLayout width="100%" margin="true" spacing="true">
+
+                                        <HorizontalLayout spacing="true" width="100%">
+                                            <DBTable id="tblDatasPedido" type="string" width="100%" caption="Detalhes do Pedido" rows="3" editable="false" visible="true" multivalue="false" selectable="false" mobileAllowed="true" >
+                               
+                                                <datasource>
+                                                    <freeQuery connection-key="vitruvio">
+                                                        <![CDATA[ 
+
+                                                            SELECT CLI.CLIENTE AS NOME_CLIENTE, DADOS.* FROM(     
+                                                            SELECT DISTINCT
+                                                            PC.NUMPED,
+                                                            PC.CODCLI,
+                                                            PC.DATA, 
+                                                            PC.DTLIBERA, 
+                                                            PC.DTCANCEL, 
+                                                            PC.DTWMS, 
+                                                            PC.DTFAT, 
+                                                            PC.DTENTREGA, 
+                                                            PC.VLTOTAL,
+                                                            PC.VLATEND, 
+                                                            PC.POSICAO, 
+                                                            PC.CODUSUR ||' - '|| US.NOME as NOME_RCA,
+                                                            SUPV.CODSUPERVISOR ||' - '|| SUPV.NOME AS SUPERVISOR,
+                                                            G.CODGERENTE ||' - '|| G.NOMEGERENTE AS NOME_GERENTE,
+                                                            CASE 
+                                                                WHEN (PC.POSICAO in ('B','P'))
+                                                                    THEN TO_CHAR(TO_DATE(SYSDATE) - TO_DATE(PC.DATA)) 
+                                                                        ELSE TO_CHAR(CASE WHEN LENGTH(PC.DTCANCEL)>1 THEN TO_CHAR(TO_DATE(PC.DTCANCEL) - TO_DATE(PC.DATA))
+                                                                            ELSE TO_CHAR(CASE WHEN LENGTH(PC.DTLIBERA)>1 THEN TO_CHAR(TO_DATE(PC.DTLIBERA) - TO_DATE(PC.DATA))
+                                                                                ELSE TO_CHAR(CASE WHEN LENGTH(PC.DTWMS)>1 THEN TO_CHAR(TO_DATE(PC.DTWMS) - TO_DATE(PC.DATA)) 
+                                                                                    ELSE TO_CHAR(CASE WHEN LENGTH(PC.DTFAT)>1 THEN TO_CHAR(TO_DATE(PC.DTFAT)-TO_DATE(PC.DATA))
+                                                                                    END)
+                                                                                END) 
+                                                                            END)
+                                                                        END)
+                                                                    END AS TEMPO_ATUAL_BLOQUEADO,
+
+                                                                CASE 
+                                                                WHEN LENGTH(PC.DTLIBERA) > 1
+                                                                    THEN NVL(TO_CHAR(TO_DATE(DTWMS) - TO_DATE(PC.DTLIBERA)),'0') 
+                                                                ELSE
+                                                                    NVL(TO_CHAR(TO_DATE(DTWMS) - TO_DATE(PC.DATA)),'0')
+                                                                END AS  QTD_DIAS_INICIO_SEPARACAO,
+
+                                                                 CASE 
+                                                                WHEN 
+                                                                    ( SELECT
+                                                              CASE WHEN ( COUNT(MOV.NUMOS) = 0) THEN                                                                       
+                                                                'WMS NAO GERADO'                                                                                          
+                                                             ELSE                                                                                                         
+                                                                 CASE WHEN ( COUNT(MOV.NUMOS) = COUNT(MOV.DTFIMOS) AND  COUNT(MOV.NUMOS) = COUNT(MOV.DTESTORNO) ) THEN    
+                                                                   'CANCELADO'                                                                                            
+                                                                 ELSE                                                                                                     
+                                                                   CASE WHEN (COUNT(MOV.NUMOS) <> COUNT(MOV.DTFIMOS)) THEN                                                
+                                                                       'PENDENTE'                                                                                         
+                                                                   ELSE                                                                                                   
+                                                                       'CONCLUIDO'                                                                                        
+                                                                   END                                                                                                    
+                                                                 END                                                                                                      
+                                                             END AS SITUACAO                                                                                              
+                                                        FROM HAF.PCMOVENDPEND MOV                                                                                          
+                                                        WHERE MOV.CODOPER = 'S'    
+                                                        AND MOV.NUMPED =  PC.NUMPED 
+                                                                    ) = 'CONCLUIDO' 
+                                                            THEN TO_CHAR(TO_DATE((SELECT MAX(MOV.DTFIMOS) AS DTFIMOS FROM HAF.PCMOVENDPEND MOV WHERE MOV.CODOPER = 'S' AND MOV.NUMPED = PC.NUMPED),'dd/MM/YYYY')- TO_DATE(PC.DTWMS))
+                                                                ELSE '0' END DT_FIM_SEP,
+                                                                TO_CHAR(TO_DATE((SELECT MAX(MOV.DTFIMOS) AS DTFIMOS FROM HAF.PCMOVENDPEND MOV WHERE MOV.CODOPER = 'S' AND MOV.NUMPED = PC.NUMPED),'DD/MM/YYYY')) as DTFIMWMS,
+                                                            NVL(TO_CHAR(TO_DATE(DTFAT) - TO_DATE(PC.DTWMS)),'0') AS QTD_DIAS_WMS,                                      
+                                                            NVL(TO_CHAR(TO_DATE(DTFAT) - TO_DATE(PC.DATA)),'0') AS TEMPO_TOTAL,
+                                                            PC.OBS1,
+                                                            PC.OBS2,
+                                                             REPLACE((SELECT DISTINCT F.CODFORNEC FROM HAF.PCFORNEC F
+                                                            INNER JOIN HAF.PCPRODUT P ON P.CODFORNEC = F.CODFORNEC 
+                                                            INNER JOIN HAF.PCPEDI PI ON PI.CODPROD = P.CODPROD
+                                                            WHERE PI.NUMPED = PC.NUMPED AND ROWNUM=1),'.','') AS CODFORNEC
+                                                            FROM HAF.PCSUPERV SUPV
+                                                            INNER JOIN HAF.PCGERENTE G ON G.CODGERENTE = SUPV.CODGERENTE AND G.CODGERENTE IN DECODE(${CODIGOGERENTE},'0', G.CODGERENTE ,  ${CODIGOGERENTE})  
+                                                            INNER JOIN HAF.PCUSUARI US ON US.CODSUPERVISOR = SUPV.CODSUPERVISOR
+                                                            INNER JOIN HAF.PCCLIENT CLI ON CLI.CODUSUR1 = US.CODUSUR  
+                                                            INNER JOIN HAF.PCPEDC PC ON PC.CODCLI = CLI.CODCLI
+                                                            WHERE NUMPED = ${NUMEROPEDIDO}
+                                                            )DADOS
+                                                            INNER JOIN HAF.PCCLIENT CLI ON CLI.CODCLI = DADOS.CODCLI                                               
+                                                        
+            
+                                                        ]]>
+                                                    </freeQuery>
+                                                </datasource>
+                            
+                            
+                                                <key-field>NUMPED</key-field>
+                            
+                                                <columns>
+                                                    <column name="NUMPED" caption="Núm. Ped." expand-ratio="1.0"/> 
+                                                    <column name="CODCLI" caption="Cód. Cli." expand-ratio="1.0"/>  
+                                                    <column name="NOME_CLIENTE" caption="Nome Cli." expand-ratio="2.0"/>  
+                                                    <column name="CODFORNEC" caption="Cód. Fornec" expand-ratio="1.0"/>  
+                                                    <column name="DATA" caption="Dt Pedido." format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>
+                                                    <column name="DTLIBERA" caption="Dt Liberação" format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>
+                                                    <column name="DTCANCEL" caption="Dt Cancelamento" format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>
+                                                    <column name="DTWMS" caption="Dt Inicio WMS" format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>
+                                                    <column name="DTFIMWMS" caption="Dt Fim WMS" format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>
+                                                    <column name="DTFAT" caption="Dt Faturamento" format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>
+                                                    <column name="DTENTREGA" caption="Dt Entrega" format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>
+                                                    <column name="TEMPO_ATUAL_BLOQUEADO" caption="TEMPO BLOQ/CANC" expand-ratio="1.0" hidable="true"/>   
+                                                    <column name="QTD_DIAS_INICIO_SEPARACAO" caption="TEMPO INICIO SEPARAÇÃO." expand-ratio="1.0" hidable="true"/>   
+                                                    <column name="DT_FIM_SEP" caption="TEMPO FIM SEPARAÇÃO"  expand-ratio="1.0" hidable="true" />   
+                                                    <!-- <column name="QTD_DIAS_DEPOSITO" caption="TEMPO DEPOSITO"  expand-ratio="1.0" />    -->
+                                                    <column name="TEMPO_TOTAL" caption="TEMPO TOTAL" expand-ratio="1.0" hidable="true"/>   
+                                                    <column name="VLTOTAL" caption="Vl. Total" decimalSeparator="," groupingSeparator="." aggregate="SUM" aggregatePrefix="Valor Total R$ " format="#,##0.00" expand-ratio="1.0"/>
+                                                    <column name="VLATEND" caption="Vl. Atendido"  decimalSeparator="," groupingSeparator="." aggregate="SUM" aggregatePrefix="Valor Total R$ " format="#,##0.00" expand-ratio="1.0"/>
+                                                    <column name="POSICAO" caption="Status Ped" expand-ratio="1.0"/>  
+                                                    <column name="NOME_RCA" caption="RCA" expand-ratio="1.0"/>  
+                                                    <column name="NOME_SUPERV" caption="RCA" expand-ratio="1.0"/>  
+                                                    <column name="NOME_GERENTE" caption="GERENTE" expand-ratio="1.0"/>  
+                                                    <column name="OBS1" caption="OBS1" expand-ratio="3.5"/>  
+                                                    <column name="OBS2" caption="OBS2" expand-ratio="3.5"/>  
+                                                </columns>
+                            
+                            
+                            
+                            
+                                                 <bind refreshOnChange="true">
+                                                    <parameter parameterName="NUMEROPEDIDO" defaultValue="0" value-type="string" field-ref="tblPedidos" />
+                                                    <parameter parameterName="CODIGOGERENTE" defaultValue="0" value-type="string" field-ref="codigoGerente" />
+                                                </bind> 
+
+
+                                                <styleGenerator>
+                                                    <scriptGenerator language="JavaScript">
+                                                                <![CDATA[
+                        
+                                                                
+                                                        function getStyle(itemId, columnId, item) {
+                                                                    
+                                                            var tempoTotal = item.getItemProperty('TEMPO_TOTAL').getValue();
+                                                            var qtdDiasBloqueado = item.getItemProperty('TEMPO_ATUAL_BLOQUEADO').getValue();                                  
+                                                            var qtdDiasWMS = item.getItemProperty('DT_FIM_SEP').getValue();
+                                                            var qtdDiasLiberado = item.getItemProperty('QTD_DIAS_INICIO_SEPARACAO').getValue();
+                        
+                                                            if(columnId == 'TEMPO_ATUAL_BLOQUEADO'){                                         
+                                                                if(qtdDiasBloqueado >= 2)return "background-light-red";    
+                                                                if(qtdDiasBloqueado == 1) return "background-light-yellow";   
+                                                                if(qtdDiasBloqueado < 1) return "background-light-green";                                              
+                                                            }
+                        
+                                                            if(columnId == 'DT_FIM_SEP'){                                         
+                                                                if(qtdDiasWMS > 2)return "background-light-red";    
+                                                                if(qtdDiasWMS == 1) return "background-light-yellow";   
+                                                                if(qtdDiasWMS < 1) return "background-light-green";                                              
+                                                            }
+                        
+                                                            if(columnId == 'QTD_DIAS_INICIO_SEPARACAO'){                                         
+                                                                if(qtdDiasLiberado > 2)return "background-light-red";    
+                                                                if(qtdDiasLiberado == 1) return "background-light-yellow";   
+                                                                if(qtdDiasLiberado < 1) return "background-light-green";                                              
+                                                            }
+                                 
+                                                        }             
+                                                            
+                                                            
+                                                        ]]>
+                                                            </scriptGenerator>
+                                                </styleGenerator> 
+            
+                                            </DBTable>
+                                        </HorizontalLayout>
+
+
+                                        </VerticalLayout>
+                                    </Panel>
+                                            
+                                        <Panel id="pnEndereco" caption="Detalhamento do Pedido" width="100%" align="TOP_RIGHT" backgroundColor="#EEEEEE"> 
+                                            <VerticalLayout margin="true" width="100%" spacing="true">
+                                                         
+                                            <HorizontalLayout spacing="true" width="100%">
+                                                <DBTable id="tblDadosPedidos" type="number" width="100%" caption="Detalhes do Pedido" rows="10" editable="false" visible="true" multivalue="false" selectable="false" mobileAllowed="true">
+                                   
+                                                    <datasource>
+                                                        <freeQuery connection-key="vitruvio">
+                                                            <![CDATA[ 
+                
+                                                            SELECT
+                                                            A.NUMPED || '_' || D.CODPROD AS PKEY,
+                                                            C.CODCLI || ' - ' || C.CLIENTE as COD_NOME_CLIENTE,
+                                                            A.NUMPED,
+                                                            A.CODUSUR,
+                                                            CASE WHEN A.POSICAO = 'L' THEN 'LIBERADO' 
+                                                            WHEN A.POSICAO = 'P' THEN 'PENDENTE' 
+                                                            WHEN A.POSICAO = 'M' THEN 'MONTADO' 
+                                                            WHEN A.POSICAO = 'C' THEN 'CANCELADO' 
+                                                            WHEN A.POSICAO = 'B' THEN 'BLOQUEADO' 
+                                                            WHEN A.POSICAO = 'F' THEN 'FATURADO'
+                                                            ELSE 'NÃO IDENTIFICADO' END AS STATUS_PEDIDO,
+                                                            CASE WHEN A.CODFILIAL = 1 THEN 'HAF' 
+                                                            WHEN A.CODFILIAL = 4 THEN 'CDV' 
+                                                            ELSE '-' END AS COD_FILIAL,
+                                                            B.PTABELA,
+                                                            B.PVENDA,
+                                                            B.QT AS QUANTIDADE,
+                                                            B.PVENDA * B.QT AS VLTOTALCOMDESC,
+                                                            B.PTABELA * B.QT AS VLTOTALSEMDESC,
+                                                            A.DATA,
+                                                            A.DTENTREGA,
+                                                            D.DESCRICAO,
+                                                            B.CODPROD
+                                                            FROM HAF.PCPEDC A 
+                                                            INNER JOIN HAF.PCPEDI B ON B.NUMPED = A.NUMPED
+                                                            INNER JOIN HAF.PCCLIENT C ON C.CODCLI = A.CODCLI
+                                                            INNER JOIN HAF.PCPRODUT D ON D.CODPROD = B.CODPROD
+                                                            WHERE A.NUMPED = ${NUMPED}
+                                                            
+                
+                                                            ]]>
+                                                        </freeQuery>
+                                                    </datasource>
+                                
+                                
+                                                    <key-field>PKEY</key-field>
+                                
+                                                    <columns>
+                                                        <column name="CODPROD" caption="CÓD PRODUTO:"/> 
+                                                        <column name="DESCRICAO" caption="DESCRIÇÃO:"/>  
+                                                        <column name="PTABELA" caption="VALOR (UNID) SEM DESCONTO:" decimalSeparator="," groupingSeparator="." aggregate="SUM" aggregatePrefix="Valor Total R$ " format="#,##0.00"/>
+                                                        <column name="PVENDA" caption="VALOR (UNID) COM DESCONTO:"  decimalSeparator="," groupingSeparator="." aggregate="SUM" aggregatePrefix="Valor Total R$ " format="#,##0.00"/>
+                                                        <column name="QUANTIDADE" caption="QTD:" aggregate="SUM"    aggregatePrefix="Quantidade: "/>  
+                                                        <column name="VLTOTALSEMDESC" caption="VLTOTAL SEM DESC:"   decimalSeparator="," groupingSeparator="." aggregate="SUM" aggregatePrefix="Valor Total R$ " format="#,##0.00"/>
+                                                        <column name="VLTOTALCOMDESC" caption="VLTOTAL COM DESC:"   decimalSeparator="," groupingSeparator="." aggregate="SUM" aggregatePrefix="Valor Total R$ " format="#,##0.00"/>
+                                                        <column name="STATUS_PEDIDO" caption="STATUS PEDIDO:"/>
+                                                        <column name="COD_FILIAL" caption="COD FILIAL:"/>
+                                                        <column name="DATA" caption="DATA DO PEDIDO:" format="dd/MM/YYYY" type="date"/>
+                                                    </columns>
+                                
+                                
+                                
+                                
+                                                     <bind refreshOnChange="true">
+                                                        <parameter parameterName="NUMPED" defaultValue="0" value-type="number" field-ref="tblPedidos" />
+                                                    </bind> 
+
+
+
+                
+                                                </DBTable>
+                                            </HorizontalLayout>
+                                        </VerticalLayout>
+                                            
+                                        </Panel>
+                
+                                    </VerticalLayout>
+                                </WindowLayout> 
+
+                                <WindowLayout id="modalObservacaoPedidos" windowModal="true" windowClosable="true" windowResizable="false" windowTitle="Validação Pedido Bloqueado" windowWidth="75%" windowHeight="75%" >
+                                    <VerticalLayout margin="true" spacing="true" width="100%">
+
+                                        
+                                        <Panel width="100%" expandRatio="1" margin="false" id="pnlTitulo" backgroundColor="#EEEEEE"> 
+                                            <VerticalLayout width="100%" margin="true" spacing="true">
+
+                                                <HorizontalLayout spacing="true" width="100%">
+
+                                                    <TextField id="nomeCliente" type="string" caption="Nome Cliente" width="100%" enabled="false">
+                                                        <events>
+                                                            <valueChange>
+                                                                <script language="JavaScript">
+                                                                    <![CDATA[ 
+                                                                        function run(){
+
+                                                                            var valorField = engine.getField('nomeCliente').getValue();
+
+                                                                            if(String(valorField).indexOf('null') == 0){
+                                                                                engine.getField('nomeCliente').setValue('');
+                                                                            }
+                                                                                    
+                                                                        }
+                                                                    ]]>
+                                                                </script>
+                                                            </valueChange>
+                                                        </events>
+                                                    </TextField>
+
+
+                                                    <TextField id="qtdPedidosBloqueado" type="string" caption="Número do Pedido" width="100%" enabled="false">
+                                                        <events>
+                                                            <valueChange>
+                                                                <script language="JavaScript">
+                                                                    <![CDATA[ 
+                                                                        function run(){
+
+                                                                            var valorField = engine.getField('qtdPedidosBloqueado').getValue();
+
+                                                                            if(String(valorField).indexOf('null') == 0){
+                                                                                engine.getField('qtdPedidosBloqueado').setValue('');
+                                                                            }
+
+                                                                        }
+                                                                    ]]>
+                                                                </script>
+                                                            </valueChange>
+                                                        </events>
+                                                    </TextField>
+
+                                                </HorizontalLayout>
+
+                                                <HorizontalLayout spacing="true" width="100%" margin="true" >
+                                                    <DBTable id="tblPedidosObs" type="string" width="100%" caption="Pedidos do Cliente" rows="6" editable="true" visible="true" multivalue="false" selectable="true" mobileAllowed="true" >
+                                       
+                                                        <datasource>
+                                                            <freeQuery connection-key="vitruvio">
+                                                                <![CDATA[ 
+        
+                                                                    SELECT CLI.CLIENTE AS NOME_CLIENTE, DADOS.* FROM(     
+                                                                    SELECT DISTINCT
+                                                                    PC.NUMPED,
+                                                                    PC.CODCLI,
+                                                                    PC.DATA, 
+                                                                    PC.DTLIBERA, 
+                                                                    PC.DTCANCEL, 
+                                                                    PC.DTWMS, 
+                                                                    PC.DTFAT, 
+                                                                    PC.DTENTREGA, 
+                                                                    PC.VLTOTAL,
+                                                                    PC.VLATEND, 
+                                                                    PC.POSICAO, 
+                                                                    PC.CODUSUR ||' - '|| US.NOME as NOME_RCA,
+                                                                    SUPV.CODSUPERVISOR ||' - '|| SUPV.NOME AS SUPERVISOR,
+                                                                    G.CODGERENTE ||' - '|| G.NOMEGERENTE AS NOME_GERENTE,
+                                                                    CASE 
+                                                                        WHEN (PC.POSICAO in ('B','P'))
+                                                                            THEN TO_CHAR(TO_DATE(SYSDATE) - TO_DATE(PC.DATA)) 
+                                                                                ELSE TO_CHAR(CASE WHEN LENGTH(PC.DTCANCEL)>1 THEN TO_CHAR(TO_DATE(PC.DTCANCEL) - TO_DATE(PC.DATA))
+                                                                                    ELSE TO_CHAR(CASE WHEN LENGTH(PC.DTLIBERA)>1 THEN TO_CHAR(TO_DATE(PC.DTLIBERA) - TO_DATE(PC.DATA))
+                                                                                        ELSE TO_CHAR(CASE WHEN LENGTH(PC.DTWMS)>1 THEN TO_CHAR(TO_DATE(PC.DTWMS) - TO_DATE(PC.DATA)) 
+                                                                                            ELSE TO_CHAR(CASE WHEN LENGTH(PC.DTFAT)>1 THEN TO_CHAR(TO_DATE(PC.DTFAT)-TO_DATE(PC.DATA))
+                                                                                            END)
+                                                                                        END) 
+                                                                                    END)
+                                                                                END)
+                                                                            END AS TEMPO_ATUAL_BLOQUEADO,
+        
+                                                                        CASE 
+                                                                        WHEN LENGTH(PC.DTLIBERA) > 1
+                                                                            THEN NVL(TO_CHAR(TO_DATE(DTWMS) - TO_DATE(PC.DTLIBERA)),'0') 
+                                                                        ELSE
+                                                                            NVL(TO_CHAR(TO_DATE(DTWMS) - TO_DATE(PC.DATA)),'0')
+                                                                        END AS  QTD_DIAS_INICIO_SEPARACAO,
+        
+                                                                         CASE 
+                                                                        WHEN 
+                                                                            ( SELECT
+                                                                      CASE WHEN ( COUNT(MOV.NUMOS) = 0) THEN                                                                       
+                                                                        'WMS NAO GERADO'                                                                                          
+                                                                     ELSE                                                                                                         
+                                                                         CASE WHEN ( COUNT(MOV.NUMOS) = COUNT(MOV.DTFIMOS) AND  COUNT(MOV.NUMOS) = COUNT(MOV.DTESTORNO) ) THEN    
+                                                                           'CANCELADO'                                                                                            
+                                                                         ELSE                                                                                                     
+                                                                           CASE WHEN (COUNT(MOV.NUMOS) <> COUNT(MOV.DTFIMOS)) THEN                                                
+                                                                               'PENDENTE'                                                                                         
+                                                                           ELSE                                                                                                   
+                                                                               'CONCLUIDO'                                                                                        
+                                                                           END                                                                                                    
+                                                                         END                                                                                                      
+                                                                     END AS SITUACAO                                                                                              
+                                                                FROM HAF.PCMOVENDPEND MOV                                                                                          
+                                                                WHERE MOV.CODOPER = 'S'    
+                                                                AND MOV.NUMPED =  PC.NUMPED 
+                                                                            ) = 'CONCLUIDO' 
+                                                                    THEN TO_CHAR(TO_DATE((SELECT MAX(MOV.DTFIMOS) AS DTFIMOS FROM HAF.PCMOVENDPEND MOV WHERE MOV.CODOPER = 'S' AND MOV.NUMPED = PC.NUMPED),'dd/MM/YYYY')- TO_DATE(PC.DTWMS))
+                                                                        ELSE '0' END DT_FIM_SEP,
+                                                                        TO_CHAR(TO_DATE((SELECT MAX(MOV.DTFIMOS) AS DTFIMOS FROM HAF.PCMOVENDPEND MOV WHERE MOV.CODOPER = 'S' AND MOV.NUMPED = PC.NUMPED),'DD/MM/YYYY')) as DTFIMWMS,
+                                                                    NVL(TO_CHAR(TO_DATE(DTFAT) - TO_DATE(PC.DTWMS)),'0') AS QTD_DIAS_WMS,                                      
+                                                                    NVL(TO_CHAR(TO_DATE(DTFAT) - TO_DATE(PC.DATA)),'0') AS TEMPO_TOTAL,
+                                                                    PC.OBS1,
+                                                                    PC.OBS2,
+                                                                     REPLACE((SELECT DISTINCT F.CODFORNEC FROM HAF.PCFORNEC F
+                                                                    INNER JOIN HAF.PCPRODUT P ON P.CODFORNEC = F.CODFORNEC 
+                                                                    INNER JOIN HAF.PCPEDI PI ON PI.CODPROD = P.CODPROD
+                                                                    WHERE PI.NUMPED = PC.NUMPED AND ROWNUM=1),'.','') AS CODFORNEC
+                                                                    FROM HAF.PCSUPERV SUPV
+                                                                    INNER JOIN HAF.PCGERENTE G ON G.CODGERENTE = SUPV.CODGERENTE  
+                                                                    INNER JOIN HAF.PCUSUARI US ON US.CODSUPERVISOR = SUPV.CODSUPERVISOR
+                                                                    INNER JOIN HAF.PCCLIENT CLI ON CLI.CODUSUR1 = US.CODUSUR  
+                                                                    INNER JOIN HAF.PCPEDC PC ON PC.CODCLI = CLI.CODCLI
+                                                                    WHERE PC.CODCLI = ${CODCLI}
+                                                                    AND PC.POSICAO IN DECODE(${STATUSPED},'0', PC.POSICAO,  ${STATUSPED})
+         
+                                                                    )DADOS
+                                                                    INNER JOIN HAF.PCCLIENT CLI ON CLI.CODCLI = DADOS.CODCLI                                               
+                                                                
+                    
+                                                                ]]>
+                                                            </freeQuery>
+                                                        </datasource>
+                                    
+                                    
+                                                        <key-field>NUMPED</key-field>
+                                    
+                                                        <columns>
+                                                            <column name="NUMPED" caption="Núm. Ped." expand-ratio="1.0"/> 
+                                                            <column name="CODCLI" caption="Cód. Cli." expand-ratio="1.0"/>  
+                                                            <column name="NOME_CLIENTE" caption="Nome Cli." expand-ratio="2.0"/>  
+                                                            <column name="CODFORNEC" caption="Cód. Fornec" expand-ratio="1.0"/>  
+                                                            <column name="DATA" caption="Dt Pedido." format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>
+                                                            <column name="DTLIBERA" caption="Dt Liberação" format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>
+                                                            <column name="DTCANCEL" caption="Dt Cancelamento" format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>
+                                                            <column name="DTWMS" caption="Dt Inicio WMS" format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>
+                                                            <column name="DTFIMWMS" caption="Dt Fim WMS" format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>
+                                                            <column name="DTFAT" caption="Dt Faturamento" format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>
+                                                            <column name="DTENTREGA" caption="Dt Entrega" format="dd/MM/YYYY" type="date" expand-ratio="1.0"/>
+                                                            <column name="TEMPO_ATUAL_BLOQUEADO" caption="TEMPO BLOQ/CANC" expand-ratio="1.0" hidable="true"/>   
+                                                            <column name="QTD_DIAS_INICIO_SEPARACAO" caption="TEMPO INICIO SEPARAÇÃO." expand-ratio="1.0" hidable="true"/>   
+                                                            <column name="DT_FIM_SEP" caption="TEMPO FIM SEPARAÇÃO"  expand-ratio="1.0" hidable="true" />   
+                                                            <!-- <column name="QTD_DIAS_DEPOSITO" caption="TEMPO DEPOSITO"  expand-ratio="1.0" />    -->
+                                                            <column name="TEMPO_TOTAL" caption="TEMPO TOTAL" expand-ratio="1.0" hidable="true"/>   
+                                                            <column name="VLTOTAL" caption="Vl. Total" decimalSeparator="," groupingSeparator="." aggregate="SUM" aggregatePrefix="Valor Total R$ " format="#,##0.00" expand-ratio="1.0"/>
+                                                            <column name="VLATEND" caption="Vl. Atendido"  decimalSeparator="," groupingSeparator="." aggregate="SUM" aggregatePrefix="Valor Total R$ " format="#,##0.00" expand-ratio="1.0"/>
+                                                            <column name="POSICAO" caption="Status Ped" expand-ratio="1.0"/>  
+                                                            <column name="NOME_RCA" caption="RCA" expand-ratio="1.0"/>  
+                                                            <column name="NOME_SUPERV" caption="RCA" expand-ratio="1.0"/>  
+                                                            <column name="NOME_GERENTE" caption="GERENTE" expand-ratio="1.0"/>  
+                                                            <column name="OBS1" caption="OBS1" expand-ratio="3.5"/>  
+                                                            <column name="OBS2" caption="OBS2" expand-ratio="3.5"/>  
+                                                        </columns>
+                                    
+                                    
+                                    
+                                    
+                                                         <bind refreshOnChange="true">
+                                                            <parameter parameterName="CODCLI" defaultValue="0" value-type="string" field-ref="tblPedidos" />
+                                                            <parameter parameterName="STATUSPED" defaultValue="0" value-type="string" field-ref="statusPedido" />
+
+                                                            <!-- <parameter parameterName="CODIGORCA" defaultValue="0" value-type="string" field-ref="twinDadosRca" />
+                                                            <parameter parameterName="CODIGOSUPERVISOR" defaultValue="0" value-type="string" field-ref="twinDadosSuperv" />
+                                                            <parameter parameterName="CODIGOFORNECEDOR" defaultValue="0" value-type="string" field-ref="twinFornecedores" />                                        
+                                                            <parameter parameterName="CODIGOGERENTE" defaultValue="0" value-type="string" field-ref="twinDadosGerente" />
+                                                            <parameter parameterName="NUMEROPEDIDO" defaultValue="0" value-type="string" field-ref="numeroPedido" />        -->
+
+
+                                                            
+                                                        </bind> 
+
+                                                        <events>
+                                                            <valueChange>
+                                                                <script language="JavaScript">
+                                                                    <![CDATA[ 
+                                                                        function run(){
+
+                                                                            importClass(Packages.br.com.davinti.base.vaadin.components.layout.MessageBox);
+                                                                            importClass(Packages.br.com.davinti.base.vaadin.components.layout.ConfirmationBox);
+                                                                            var db=libService.loadScript('db');
+                                                                            var connection=new db('vitruvio');  
+
+                                                                            var codigoCliente = engine.getField('tblPedidos').getValue();
+                                                                            var numPedido = engine.getField('tblPedidosObs').getValue();
+                                                                            var observacaoBloqueio = engine.getField('observacaoBloqueio').getValue();
+                                                                           
+
+                                                                            var sqlDadosCli =   " SELECT DISTINCT CLI.CODCLI, CLI.CLIENTE                " +
+                                                                                                " FROM HAF.PCPEDC PC                                     " +        
+                                                                                                " INNER JOIN HAF.PCCLIENT CLI ON CLI.CODCLI = PC.CODCLI  " +
+                                                                                                " WHERE PC.CODCLI = :CODCLI                              " ;
+
+                                                                            var resDados = connection.queryRow(sqlDadosCli,{CODCLI: codigoCliente});
+
+                                                                            if(resDados){
+                                                                                engine.getField('nomeCliente').setValue(String(resDados.CLIENTE))
+                                                                                engine.getField('qtdPedidosBloqueado').setValue(String(numPedido));
+                                                                                engine.getField('tblDadosQtd').setValue(String(numPedido));
+                                                                            }
+
+
+                                                                            //Caso tenha preenchido o campo Observação será validado.
+
+                                                                            if(String(observacaoBloqueio).length > 5){
+
+                                                                                var listener = new ConfirmationBox.ConfirmationBoxListener() {
+                                                                                    dialogEnd: function(context, action) {
+                                                                                        if(action == ConfirmationBox.Action.YES) {
+
+                                                                                            //Enviando para o banco de dados.
+
+                                                                                            
+                                                                                            MessageBox.show('INFO', 'Observação do pedido '+numPedido+'  Registrada com Sucesso.');	
+
+                                                                                            //Limpando o campo após o envio para a base de dados
+                                                                                            engine.getField('observacaoBloqueio').setValue('');
+
+                                                                                            
+                                                                                            }if(action == ConfirmationBox.Action.NO){
+                                                                                                MessageBox.show('INFO', 'Cancelado o Registro da observação.');	
+                                                                                            }
+                                                                                    }
+                                                                                };
+
+
+                                                                                ConfirmationBox.show(ConfirmationBox.DialogIcon.INFO, 'Atualização da Observação do Pedido', 'Identificado informações no campo observação para o pedido número: '+numPedido+', você deseja salvar a informação preenchida?', listener, ConfirmationBox.ACTION_YES_CANCEL);  
+                                                                                engine.getField('nomeCliente').setValue('')
+
+
+                                                                            } 
+
+
+
+
+
+
+ 
+                                                                        }
+
+                                                                    ]]>
+                                                                </script>
+                                                            </valueChange>
+                                                        </events>
+
+                                                        
+        
+        
+                                                        <styleGenerator>
+                                                            <scriptGenerator language="JavaScript">
+                                                                        <![CDATA[
+                                
+                                                                        
+                                                                function getStyle(itemId, columnId, item) {
+                                                                            
+                                                                    var tempoTotal = item.getItemProperty('TEMPO_TOTAL').getValue();
+                                                                    var qtdDiasBloqueado = item.getItemProperty('TEMPO_ATUAL_BLOQUEADO').getValue();                                  
+                                                                    var qtdDiasWMS = item.getItemProperty('DT_FIM_SEP').getValue();
+                                                                    var qtdDiasLiberado = item.getItemProperty('QTD_DIAS_INICIO_SEPARACAO').getValue();
+                                
+                                                                    if(columnId == 'TEMPO_ATUAL_BLOQUEADO'){                                         
+                                                                        if(qtdDiasBloqueado >= 2)return "background-light-red";    
+                                                                        if(qtdDiasBloqueado == 1) return "background-light-yellow";   
+                                                                        if(qtdDiasBloqueado < 1) return "background-light-green";                                              
+                                                                    }
+                                
+                                                                    if(columnId == 'DT_FIM_SEP'){                                         
+                                                                        if(qtdDiasWMS > 2)return "background-light-red";    
+                                                                        if(qtdDiasWMS == 1) return "background-light-yellow";   
+                                                                        if(qtdDiasWMS < 1) return "background-light-green";                                              
+                                                                    }
+                                
+                                                                    if(columnId == 'QTD_DIAS_INICIO_SEPARACAO'){                                         
+                                                                        if(qtdDiasLiberado > 2)return "background-light-red";    
+                                                                        if(qtdDiasLiberado == 1) return "background-light-yellow";   
+                                                                        if(qtdDiasLiberado < 1) return "background-light-green";                                              
+                                                                    }
+                                         
+                                                                }             
+                                                                    
+                                                                    
+                                                                ]]>
+                                                                    </scriptGenerator>
+                                                        </styleGenerator> 
+
+
+                    
+                                                    </DBTable>
+                                                </HorizontalLayout>
+                                            </VerticalLayout>
+                                        </Panel>
+
+
+                                        <Panel width="100%" expandRatio="1" margin="false" id="pnDadosCLiente" backgroundColor="#EEEEEE"> 
+                                            <VerticalLayout width="100%" margin="true" spacing="true">
+
+                                                <HorizontalLayout spacing="true" width="100%" >
+
+                                                    <DBTable id="tblDadosQtd" type="string" width="100%" caption="Pedidos do Cliente" rows="6" editable="true" visible="true" multivalue="false" selectable="true" mobileAllowed="true" >
+                                       
+                                                        <datasource>
+                                                            <freeQuery connection-key="vitruvio">
+                                                                <![CDATA[ 
+                                                             
+                                                                    SELECT DISTINCT 
+                                                                    DADOS.CODCLI,
+                                                                    DADOS.CODPROD,
+                                                                    DADOS.DESCRICAO,
+                                                                    SUM(DADOS.ESTOQUE_GERAL) QTD_TOTAL_ESTOQUE,
+                                                                    DADOS.QT AS QTD_PEDIDO,
+                                                                    CASE WHEN SUM(DADOS.ESTOQUE_GERAL) > DADOS.QT THEN 'COM ESTOQUE' ELSE 'SEM ESTOQUE' END AS STATUS_VENDA, 
+                                                                    DADOS.QT * DADOS.PVENDA AS VALOR_ATENDIDO_HAF,
+                                                                    DADOS.PVENDA * SUM(DADOS.ESTOQUE_GERAL) AS VLTOTAL_ESTOQUE 
+                                                                    FROM(
+                                                                    SELECT DISTINCT  
+                                                                        PI.CODPROD,
+                                                                        PI.CODCLI,
+                                                                        PI.NUMPED,
+                                                                        PI.QT,
+                                                                        PI.PVENDA,
+                                                                        EST.CODFILIAL,
+                                                                        PRD.DESCRICAO,
+                                                                        CASE WHEN (NVL(EST.QTESTGER,0) <= 0 )                                                                                                                             
+                                                                        THEN 0                                                                                                                                                                     
+                                                                        ELSE                                                                                                                                                                      
+                                                                        CASE WHEN (NVL(EST.QTEST,0) <= 0 )                                                                                                                                 
+                                                                        THEN 0                                                                                                                                                                      
+                                                                        ELSE                                                                                                                                                                         
+                                                                        CASE WHEN (NVL(EST.QTESTGER,0) > NVL(EST.QTEST,0))                                                                                                         
+                                                                        THEN                                                                                                                                                                         
+                                                                        TRUNC((NVL(EST.QTEST,0)   - (NVL(EST.QTRESERV,0)) - NVL(EST.QTBLOQUEADA, 0))  , 0)                                 
+                                                                        ELSE                                                                                                                                                                         
+                                                                        TRUNC(( NVL(EST.QTESTGER, 0) - (NVL(EST.QTRESERV,0)) - NVL(EST.QTBLOQUEADA, 0)) , 0)                            
+                                                                        END                                                                                                                                                                         
+                                                                        END                                                                                                                                                                        
+                                                                        END AS ESTOQUE_GERAL    
+                                                                    FROM HAF.PCPEDI PI
+                                                                    INNER JOIN HAF.PCEST EST ON EST.CODPROD = PI.CODPROD AND EST.CODFILIAL IN ('4','1')
+                                                                    INNER JOIN HAF.PCPEDC PC ON PC.NUMPED = PI.NUMPED
+                                                                    INNER JOIN HAF.PCPRODUT PRD ON PRD.CODPROD = PI.CODPROD
+                                                                    WHERE PI.NUMPED = ${NUMPED}                                                                  
+                                                                    )DADOS
+                                                                    GROUP BY DADOS.CODCLI, DADOS.QT, DADOS.PVENDA, DADOS.CODPROD, DADOS.DESCRICAO
+                    
+                                                                ]]>
+                                                            </freeQuery>
+                                                        </datasource>
+                                    
+                                    
+                                                        <key-field>CODPROD</key-field>
+                                    
+                                                        <columns>
+                                                            <column name="CODPROD" caption="Código Produto." expand-ratio="1.0"/> 
+                                                            <column name="DESCRICAO" caption="Descrição." expand-ratio="2.0"/>  
+                                                            <column name="QTD_TOTAL_ESTOQUE" caption="Estoque HAF/CDV." expand-ratio=".0"/>  
+                                                            <column name="QTD_PEDIDO" caption="Qtd no Pedido" expand-ratio="1.0"/>  
+                                                            <column name="STATUS_VENDA" caption="Status Venda" expand-ratio="1.0"/>  
+                                                            <column name="VALOR_ATENDIDO_HAF" caption="valor Atendido HAF" decimalSeparator="," groupingSeparator="." aggregate="SUM" aggregatePrefix="Valor Total R$ " format="#,##0.00" expand-ratio="1.0"/>  
+                                                            <!-- <column name="VLTOTAL_PEDIDO" caption="VL Total Produto" decimalSeparator="," groupingSeparator="." aggregate="SUM" aggregatePrefix="Valor Total R$ " format="#,##0.00" expand-ratio="1.0"/>   -->
+                                                            <!-- <column name="VLTOTAL_ESTOQUE" caption="VL Total Estoque HAF" decimalSeparator="," groupingSeparator="." aggregate="SUM" aggregatePrefix="Valor Total R$ " format="#,##0.00" expand-ratio="1.0"/>   -->
+                                                        </columns>
+ 
+                                    
+                                                         <bind refreshOnChange="true">
+                                                            <parameter parameterName="NUMPED" defaultValue="0" value-type="string" field-ref="tblPedidosObs" />
+                                                            <parameter parameterName="STATUSPED" defaultValue="0" value-type="string" field-ref="statusPedido" />
+                                                        </bind> 
+
+
+                                                        <styleGenerator>
+                                                            <scriptGenerator language="JavaScript">
+                                                                        <![CDATA[
+                                
+                                                                        
+                                                                function getStyle(itemId, columnId, item) {
+                                                                            
+                                                                    var status = item.getItemProperty('STATUS_VENDA').getValue();
+ 
+                                
+                                                                    if(columnId == 'STATUS_VENDA'){                                         
+                                                                        if(status == "COM ESTOQUE")return "background-light-blue";    
+                                                                        if(status == "SEM ESTOQUE")return "background-light-red";    
+                                                                    }
+                                
+                                         
+                                                                }             
+                                                                    
+                                                                    
+                                                                ]]>
+                                                                    </scriptGenerator>
+                                                        </styleGenerator> 
+
+ 
+                    
+                                                    </DBTable>
+
+                                                </HorizontalLayout>
+
+
+                                            </VerticalLayout>
+                                        </Panel>
+
+
+
+
+                                        <Panel width="100%" expandRatio="1" margin="false" id="pnlTitulo" backgroundColor="#EEEEEE"> 
+                                            <VerticalLayout width="100%" margin="true" spacing="true">
+
+                                                <HorizontalLayout spacing="true" width="100%" >
+                                                    <TextArea id="observacaoBloqueio" type="string" width="100%" rows="6" caption="OBSERVAÇÃO BLOQUEIO - Informe a validação realizada:"></TextArea>
+                                                </HorizontalLayout>
+
+
+                                            </VerticalLayout>
+                                        </Panel>
+
+
+                                        <HorizontalLayout spacing="true" width="70%" align="TOP_CENTER">
+                                            <ButtonWidget  defaultIcon="REMOVE" style="RED" id="btnLimparObs" caption="Sair"  description="Cancelar"   >
+                                                <onClickScript language="JavaScript">
+                                                            <![CDATA[ 
+        
+                                                                function run(){             
+                                                                                     
+                                                                    engine.getField('nomeCliente').setValue('')
+                                                                    engine.getField('observacaoBloqueio').setValue('')
+                                                                    engine.getField('tblPedidosObs').setValue(null)
+                                                                    engine.getField('qtdPedidosBloqueado').setValue('')
+
+                                                                    engine.getLayout('modalObservacaoPedidos').closeWindow();
+
+            
+                                                                }
+                                                            
+                                                            ]]>  
+                                                    </onClickScript>
+                                                </ButtonWidget>  
+
+                                                <ButtonWidget  defaultIcon="SEARCH" style="BLUE" id="btnConfirmarObs" caption="Salvar"  description="Confirmar o registro das informações?"   >
+                                                    <onClickScript language="JavaScript">
+                                                                <![CDATA[ 
+            
+                                                                function run(){          
+
+                                                                    importClass(Packages.br.com.davinti.base.vaadin.components.layout.MessageBox);
+                                                                    importClass(Packages.br.com.davinti.base.vaadin.components.layout.ConfirmationBox);
+                                                                    var db=libService.loadScript('db');
+                                                                    var connection =new db('vitruvio'); 
+
+                                                                    var observacaoBloqueio = engine.getField('observacaoBloqueio').getValue()
+                                                                    
+                                                                    
+                                                                    var listener = new ConfirmationBox.ConfirmationBoxListener() {
+                                                                        dialogEnd: function(context, action) {
+                                                                            if(action == ConfirmationBox.Action.YES) {
+
+
+                                                                                MessageBox.show('INFO', 'Atualização Realizada com Sucesso.');	
+                                                                                engine.getField('observacaoBloqueio').setValue('')
+                                                                                engine.getField('tblPedidosObs').setValue(null)
+                                                                                engine.getField('qtdPedidosBloqueado').setValue('')
+                                                                                engine.getLayout('modalObservacaoPedidos').closeWindow()
+
+                                                                                }if(action == ConfirmationBox.Action.NO){
+                                                                                    MessageBox.show('INFO', 'Cancelado a Atualização.');	
+                                                                                }
+                                                                        }
+                                                                    };
+
+
+
+                                                                    ConfirmationBox.show(ConfirmationBox.DialogIcon.INFO, 'Atualização de Status', 'Você confirma a Atualização de Status?', listener, ConfirmationBox.ACTION_YES_CANCEL);  
+                                                                    engine.getField('nomeCliente').setValue('')
+                                                                    
+
+
+
+
+                
+                                                                }
+                                                                
+                                                                ]]>  
+                                                        </onClickScript>
+                                                    </ButtonWidget>  
+                                        </HorizontalLayout>
+
+
+                                            
+                
+                                    </VerticalLayout>
+                                </WindowLayout> 
+
+							 </HorizontalLayout> 
+                            
+ 
+							 
+						  </VerticalLayout>
+					   </Panel>
+
+                       <Panel width="100%" expandRatio="1" margin="false" id="pnMonitoramentoDados" backgroundColor="#f3f4f6"> 
+                        <VerticalLayout width="100%" margin="true" spacing="true">
+                            <HorizontalLayout align="TOP_CENTER" width="100%" backgroundColor="#f3f4f6" id="hrLabelResultMonitoramento">
+
+                                <Label id="lblMonitoramentoPedido" contentMode="HTML" width="100%" align="TOP_CENTER">
+                                    <value>
+                                        <![CDATA[
+
+                                        ]]>
+                                    </value>
+                                </Label>  
+                
+                             </HorizontalLayout>
+                        </VerticalLayout>
+                    </Panel>
+
+            
+
+				   </VerticalLayout>
+			   </Section>
+
+               <Section captionColor="#50c8e3" subCaptionColor="#8fe350" colorSeparator="#524a4a" align="MIDDLE_LEFT" caption=""  subCaption="">
+           
+
+          <VerticalLayout spacing="true" margin="true" width="100%">
+         </VerticalLayout>
+     </Section>
+
+
+			</CrudPanel>  
+                
+                </VerticalLayout>
+                
+                </Tab>
+
+                              
+            </TabLayout>
+
+		
+  
+			
+			
+
+		</VerticalLayout>
+	</components>
+</form>
+</panel-form>Lorum Ipsum
+Lorum Ipsum
+
+Informação de teste realizado com sucesso
