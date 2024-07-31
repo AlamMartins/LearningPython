@@ -1,0 +1,54 @@
+#Abrir terminal pasta raiz
+
+# instalação do projeto
+python -m venv .venv  
+
+# Criação do ambiente virtual
+.venv\Scripts\activate 
+
+# Instalação do fastApi e uvicorn
+pip install fastapi uvicorn 
+
+# Executando o projeto
+uvicorn api:app --reload 
+
+
+
+
+
+----------------------------------------------- api.py --------------------------------------------------
+
+
+from menu import menu # Base de Dados "Menu"
+from fastapi import FastAPI, Path, HTTPException #fastapi é um framework para APIs.
+
+
+app = FastAPI() #criando uma instância do FASTAPI
+
+
+""
+"----------------- ROTAS API  -----------------"
+""
+
+@app.get('/get-item/{item_id}')
+def get_item(item_id: int = Path(..., description="Fill with ID of the item you want to view")):
+
+    search = list(filter(lambda x: x["id"] == item_id, menu))
+
+    if not search:
+        raise HTTPException(status_code=404, detail="Item does not exist")
+
+    return {'Item': search[0]}
+
+
+ 
+
+@app.get("/")
+def hello_world_root():
+    return {"Logger": "Hello World"}
+
+
+
+----------------------------------------------------------------------------------------------------------------
+
+
