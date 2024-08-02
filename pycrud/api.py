@@ -1,4 +1,5 @@
 from menu import menu # Base de Dados "Menu"
+from pydantic import BaseModel
 from fastapi import FastAPI, Path, HTTPException, Query #fastapi é um framework para APIs.
 
 
@@ -9,6 +10,18 @@ app = FastAPI() #criando uma instância do FASTAPI
 "----------------- ROTAS API  -----------------"
 ""
 
+" ---- CLASSES --- "
+
+class Item(BaseModel): #Ao Acionar esta função cria-se um objeto do tipo Item, o qual possui os atributos nome e preco no envio de dados via POST
+    nome: str = None
+    preco: float
+
+
+" ---- CLASSES --- "
+
+
+"  ************* ROTAS 01 - /get-item/{item_id} [GET]"
+# Rota consiste retornar valores referente ao ID informado
 
 @app.get("/get-item/{item_id}")
 async def read_items(
@@ -23,23 +36,53 @@ async def read_items(
         # results.update({"q": q})
     return search
 
+"  ************* ROTAS 02 - /get-item/{item_id} [GET]"
+# Rota consiste retornar valores acima de um valor informado
 
 # #Function get_item (Captura o valor conforme o ID informado no parâmetro)
-# @app.get('/get-item/{item_id}')
-# def get_item(item_id: int = Path(..., description="Fill with ID of the item you want to view")):
+@app.get('/valoresAcima/{valor}')
+def get_item(valor: int = Path(..., description="Fill with ID of the item you want to view")):
 
-#     search = list(filter(lambda x: x["id"] == item_id, menu))
+    search = list(filter(lambda x: x["preço"] > valor, menu))
 
-#     if not search:
-#         raise HTTPException(status_code=404, detail="Item does not exist")
+    if not search:
+        raise HTTPException(status_code=404, detail="Item does not exist")
 
-#     return {'Item': search[0]}
+    return search
 
+"  ************* ROTAS 03 - / [GET]"
+# Rota básica inicial, consiste retornar uma mensagem de que a API está funcionando.
 
 #Function get_item (Captura o valor conforme o ID informado no parâmetro)
 @app.get("/")
 def hello_world_root():
     return {"Logger": "Hello World"}
+
+
+"  ************* ROTAS 04 - /get-item/{item_id} [GET]"
+# Rota consiste retornar a lista completa.
+@app.get('/list-menu')
+def list_menu():
+    return {'Menu': menu}
+
+
+"  ************* ROTAS 05 - /create-item/{item_id} [POST]"
+# Rota consiste retornar a lista completa.
+@app.post('/create-item/{item_id}')
+def create_item(item_id: int, item: Item):
+
+    search = list(filter(lambda x: x["id"] == item_id, menu))
+
+    if search != []:
+        return {'Error': f'Este id {search[0]["id"]} já se encontra cadastrado com o nome {search[0]["nome"]} na nossa base de dados, tente novamente com outro ID.'}
+
+
+    item = item.model_dump()
+    item['id'] = item_id
+
+    menu.append(item)
+    return item
+
 
 
 ""
